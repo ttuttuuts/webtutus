@@ -3716,6 +3716,88 @@ document.getElementById('eqnSolve').addEventListener('click', () => {
     }
   } catch (err) { console.error('IndexedDB init failed:', err); savedCount.textContent = '!'; }
 })();
+  <!-- === BẮT ĐẦU CHATBOT AI WEBTUTUS === -->
+<button id="ai-chat-toggle" onclick="toggleChat()" style="position:fixed;bottom:20px;right:20px;padding:12px 20px;background:#2563eb;color:#fff;border:none;border-radius:25px;cursor:pointer;z-index:9999;font-weight:bold;box-shadow:0 4px 10px rgba(0,0,0,0.2);">💬 Trợ lý AI</button>
+
+<div id="ai-chat-box" style="display:none;position:fixed;bottom:80px;right:20px;width:330px;height:430px;background:#fff;border:1px solid #ccc;border-radius:12px;box-shadow:0 5px 20px rgba(0,0,0,0.2);z-index:9999;flex-direction:column;overflow:hidden;font-family:Segoe UI, sans-serif;">
+  
+  <!-- Header có chữ by mvpoot -->
+  <div style="background:#2563eb;color:#fff;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <div style="font-weight:bold;font-size:15px;">🤖 Trợ lý WebTutus AI</div>
+      <div style="font-size:11px;opacity:0.85;margin-top:2px;">By mvpoot</div>
+    </div>
+    <button onclick="toggleChat()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:18px;">✖</button>
+  </div>
+
+  <!-- Nội dung tin nhắn -->
+  <div id="chat-messages" style="flex:1;padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;background:#f9fafb;">
+    <div style="background:#e5e7eb;color:#333;padding:8px 12px;border-radius:10px;max-width:80%;align-self:flex-start;font-size:14px;line-height:1.4;">Xin chào! Tôi là trợ lý AI của WebTutus. Bạn cần trợ giúp gì hôm nay?</div>
+  </div>
+
+  <!-- Khung nhập tin nhắn -->
+  <div style="display:flex;padding:10px;border-top:1px solid #ddd;background:#fff;">
+    <input type="text" id="chat-input" placeholder="Nhập câu hỏi..." style="flex:1;padding:8px 12px;border:1px solid #ccc;border-radius:6px;outline:none;font-size:14px;" onkeypress="if(event.key==='Enter') sendAIMessage()">
+    <button onclick="sendAIMessage()" style="margin-left:8px;padding:8px 15px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:bold;">Gửi</button>
+  </div>
+
+  <!-- Dòng thương hiệu dưới cùng -->
+  <div style="background:#f1f5f9;color:#64748b;text-align:center;padding:4px;font-size:10px;border-top:1px solid #e2e8f0;">
+    Powered by Gemini • Developed by <b>mvpoot</b>
+  </div>
+
+</div>
+
+<script>
+const GEMINI_API_KEY = "AQ.Ab8RN6JC0ocmeTPx5_9flOmrc5UOcX5d8MnOqAc6vAeZx7c7zg";
+
+function toggleChat() {
+  const box = document.getElementById("ai-chat-box");
+  box.style.display = (box.style.display === "none" || box.style.display === "") ? "flex" : "none";
+}
+
+async function sendAIMessage() {
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+
+  const messagesDiv = document.getElementById("chat-messages");
+
+  // Hiển thị câu hỏi người dùng
+  const userMsg = document.createElement("div");
+  userMsg.style.cssText = "background:#2563eb;color:#fff;padding:8px 12px;border-radius:10px;max-width:80%;align-self:flex-end;font-size:14px;line-height:1.4;";
+  userMsg.innerText = text;
+  messagesDiv.appendChild(userMsg);
+  input.value = "";
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+  // Hiển thị trạng thái đang trả lời
+  const aiMsg = document.createElement("div");
+  aiMsg.style.cssText = "background:#e5e7eb;color:#333;padding:8px 12px;border-radius:10px;max-width:80%;align-self:flex-start;font-size:14px;line-height:1.4;";
+  aiMsg.innerText = "Đang suy nghĩ...";
+  messagesDiv.appendChild(aiMsg);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: "Bạn là trợ lý AI thông minh cho trang web WebTutus. Hãy trả lời ngắn gọn, lịch sự câu hỏi sau: " + text }] }]
+      })
+    });
+    const data = await res.json();
+    if (data.candidates && data.candidates[0].content.parts[0].text) {
+      aiMsg.innerText = data.candidates[0].content.parts[0].text;
+    } else {
+      aiMsg.innerText = "Xin lỗi, không nhận được phản hồi từ AI.";
+    }
+  } catch (err) {
+    aiMsg.innerText = "Lỗi kết nối API. Vui lòng thử lại sau!";
+  }
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
 </script>
+<!-- === KẾT THÚC CHATBOT AI WEBTUTUS === -->
 </body>
 </html>
