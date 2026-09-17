@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>fx-580VN X [CY-298 A]</title>
+<title>casioXtutus</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;outline:none}
 :root{
@@ -26,220 +26,106 @@ button{outline:none!important;-webkit-tap-highlight-color:transparent;font-famil
 button:focus{outline:none!important}
 button::-moz-focus-inner{border:0}
 
-/* ============ LAYOUT ============ */
-.desktop{
-  display:flex;
-  align-items:stretch;
-  filter:drop-shadow(0 25px 50px rgba(30,64,175,.35));
-  transition:filter .2s;
-}
+.desktop{display:flex;align-items:stretch}
 
-/* ============ SIDE PANEL ============ */
 .side-panel{
-  display:none;
-  flex-direction:column;
-  width:148px;
+  display:none;flex-direction:column;width:148px;
   background:linear-gradient(180deg,#f4f8ff,#e8f1ff);
-  border:1.5px solid var(--blue-2);
-  border-right:none;
-  border-radius:14px 0 0 14px;
-  padding:8px 7px;
-  gap:6px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
-  position:relative;
+  border-right:1px solid var(--line);
+  padding:8px 7px;gap:6px;position:relative;
 }
 .desktop.panel-open .side-panel{display:flex}
-.desktop.panel-open .emulator{border-radius:0 14px 14px 0}
 
 .sp-close{
-  position:absolute;
-  top:5px;right:5px;
-  width:16px;height:16px;
-  border-radius:50%;
-  background:rgba(220,38,38,.1);
-  color:#dc2626;
-  font-size:11px;
-  font-weight:900;
-  display:grid;place-items:center;
-  cursor:pointer;
-  line-height:1;
-  transition:all .15s;
-  border:none;
+  position:absolute;top:5px;right:5px;width:16px;height:16px;
+  border-radius:50%;background:rgba(220,38,38,.1);color:#dc2626;
+  font-size:11px;font-weight:900;display:grid;place-items:center;
+  cursor:pointer;line-height:1;transition:all .15s;border:none;
 }
 .sp-close:hover{background:#dc2626;color:#fff}
 
 .sp-title{
-  font-size:8.5px;
-  font-weight:800;
-  color:#64748b;
-  letter-spacing:.6px;
-  text-transform:uppercase;
-  text-align:center;
-  padding-bottom:4px;
-  border-bottom:1px dashed rgba(59,130,246,.3);
-  padding-right:18px;
+  font-size:8.5px;font-weight:800;color:#64748b;letter-spacing:.6px;
+  text-transform:uppercase;text-align:center;padding-bottom:4px;
+  border-bottom:1px dashed rgba(59,130,246,.3);padding-right:18px;
 }
 
-.sp-section{
-  display:flex;flex-direction:column;
-  gap:2px;
-}
+.sp-section{display:flex;flex-direction:column;gap:2px}
 .sp-label{
-  font-size:7.5px;
-  font-weight:800;
-  color:#94a3b8;
-  letter-spacing:.4px;
-  text-transform:uppercase;
+  font-size:7.5px;font-weight:800;color:#94a3b8;
+  letter-spacing:.4px;text-transform:uppercase;
 }
 .sp-select{
-  width:100%;
-  padding:4px 5px;
-  font-family:inherit;
-  font-size:10px;
-  font-weight:700;
-  color:#1e40af;
-  background:#fff;
-  border:1.5px solid #c7d9fd;
-  border-radius:6px;
-  outline:none;
-  cursor:pointer;
-  appearance:none;
+  width:100%;padding:4px 5px;font-family:inherit;font-size:10px;font-weight:700;
+  color:#1e40af;background:#fff;border:1.5px solid #c7d9fd;border-radius:6px;
+  outline:none;cursor:pointer;appearance:none;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='3'><path d='m6 9 6 6 6-6'/></svg>");
-  background-repeat:no-repeat;
-  background-position:right 5px center;
-  padding-right:18px;
+  background-repeat:no-repeat;background-position:right 5px center;padding-right:18px;
 }
 .sp-select:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,.15)}
 
-/* Ô nhập giá trị */
-.sp-input-wrap{
-  display:flex;
-  gap:3px;
-}
+.sp-input-wrap{display:flex;gap:3px}
 .sp-input{
-  flex:1;
-  min-width:0;
-  padding:5px 7px;
-  font-family:"Consolas","Menlo",monospace;
-  font-size:12px;
-  font-weight:700;
-  color:#000;
-  background:#fff;
-  border:1.5px solid #c7d9fd;
-  border-radius:6px;
-  outline:none;
-  text-align:right;
+  flex:1;min-width:0;padding:5px 7px;
+  font-family:"Consolas","Menlo",monospace;font-size:12px;font-weight:700;
+  color:#000;background:#fff;border:1.5px solid #c7d9fd;border-radius:6px;
+  outline:none;text-align:right;
 }
 .sp-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,.15)}
 .sp-input::placeholder{color:#cbd5e1;font-weight:500;font-size:10px}
 .sp-swap{
-  width:26px;
-  border-radius:6px;
-  border:1.5px solid #c7d9fd;
-  background:#fff;
-  color:var(--blue-deep);
-  font-size:12px;
-  font-weight:900;
-  cursor:pointer;
-  display:grid;place-items:center;
-  flex:none;
-  transition:all .15s;
+  width:26px;border-radius:6px;border:1.5px solid #c7d9fd;background:#fff;
+  color:var(--blue-deep);font-size:12px;font-weight:900;
+  cursor:pointer;display:grid;place-items:center;flex:none;transition:all .15s;
 }
 .sp-swap:hover{background:#eff5ff;border-color:var(--blue-2)}
 
 .sp-result{
   background:linear-gradient(180deg,#fff,#eef3fb);
-  border:1.5px solid var(--blue-2);
-  border-radius:6px;
-  padding:5px 7px;
-  text-align:center;
+  border:1.5px solid var(--blue-2);border-radius:6px;
+  padding:5px 7px;text-align:center;
 }
 .sp-result-label{
-  font-size:7px;
-  font-weight:800;
-  color:#94a3b8;
-  letter-spacing:.4px;
-  text-transform:uppercase;
-  margin-bottom:2px;
+  font-size:7px;font-weight:800;color:#94a3b8;
+  letter-spacing:.4px;text-transform:uppercase;margin-bottom:2px;
 }
 .sp-result-val{
-  font-family:"Consolas","Menlo",monospace;
-  font-size:13px;
-  font-weight:800;
-  color:#000;
-  word-break:break-all;
-  line-height:1.15;
-  min-height:16px;
+  font-family:"Consolas","Menlo",monospace;font-size:13px;font-weight:800;
+  color:#000;word-break:break-all;line-height:1.15;min-height:16px;
 }
 
 .sp-eq{
-  font-size:9px;
-  font-weight:700;
-  color:#64748b;
-  text-align:center;
-  padding:3px 2px;
-  border-radius:5px;
-  background:rgba(59,130,246,.06);
-  line-height:1.35;
-  word-break:break-all;
+  font-size:9px;font-weight:700;color:#64748b;text-align:center;
+  padding:3px 2px;border-radius:5px;background:rgba(59,130,246,.06);
+  line-height:1.35;word-break:break-all;
 }
 
 .sp-hint{
-  font-size:7px;
-  font-weight:700;
-  color:#94a3b8;
-  text-align:center;
-  padding:3px 2px;
-  border-radius:5px;
-  background:rgba(59,130,246,.06);
-  line-height:1.4;
-  letter-spacing:.2px;
-  margin-top:auto;
+  font-size:7px;font-weight:700;color:#94a3b8;text-align:center;
+  padding:3px 2px;border-radius:5px;background:rgba(59,130,246,.06);
+  line-height:1.4;letter-spacing:.2px;margin-top:auto;
 }
 .sp-hint kbd{
-  font-family:inherit;
-  font-size:7px;
-  font-weight:800;
-  color:var(--blue-deep);
-  background:#fff;
-  border:1px solid #c7d9fd;
-  border-radius:3px;
-  padding:0 3px;
-  margin:0 1px;
+  font-family:inherit;font-size:7px;font-weight:800;color:var(--blue-deep);
+  background:#fff;border:1px solid #c7d9fd;border-radius:3px;
+  padding:0 3px;margin:0 1px;
 }
 
-/* ============ EMULATOR ============ */
-.emulator{
-  width:min(380px, calc(100vw - 20px));
-  background:#fff;
-  border:1.5px solid var(--blue-2);
-  border-radius:14px;
-  overflow:hidden;
-  display:flex;flex-direction:column;
-  transition:border-radius .2s;
-}
-.emu-header{
-  display:flex;align-items:center;gap:6px;padding:5px 10px;
-  background:linear-gradient(180deg,#f4f8ff,#eaf1ff);
-  color:var(--blue-deep);border-bottom:1px solid var(--line);min-height:28px;
-}
-.emu-header .emu-icon{width:12px;height:12px;display:grid;place-items:center;font-size:9px;color:var(--blue-2);flex:none}
-.emu-header .emu-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;font-weight:700;color:#26374b;letter-spacing:.1px}
-.emu-header .emu-icons{display:flex;gap:8px;font-size:12px;color:var(--blue-2)}
-.emu-header .emu-icons span{cursor:pointer;line-height:1;transition:color .15s}
-.emu-header .emu-icons span:hover{color:var(--blue)}
+.emulator{width:380px;background:#fff;display:flex;flex-direction:column}
+.calc{background:#fff;padding:4px 6px 8px;display:flex;flex-direction:column;gap:5px}
 
-.calc{background:#fff;padding:10px 10px 12px;display:flex;flex-direction:column;gap:5px}
-
-.lcd-frame{background:linear-gradient(180deg,#eff4fb,#dbe5f2);border-radius:6px;padding:4px;box-shadow:inset 0 2px 4px rgba(30,64,175,.15),0 1px 0 rgba(255,255,255,.9)}
+.lcd-frame{
+  background:linear-gradient(180deg,#e3ecfa,#c9d9f0);
+  border-radius:6px;padding:3px;
+  box-shadow:inset 0 1px 3px rgba(30,64,175,.18);
+}
 .lcd{
   background:linear-gradient(180deg,#f9fbff 0%,#eef3fb 100%);
   border:1.5px solid var(--blue-2);border-radius:4px;
-  padding:6px 10px 8px;height:92px;
-  box-shadow:inset 0 2px 6px rgba(30,64,175,.10),0 2px 6px -2px rgba(30,64,175,.15);
+  padding:5px 9px 7px;height:88px;
+  box-shadow:inset 0 2px 6px rgba(30,64,175,.10);
   font-family:"Consolas","Menlo",monospace;
-  display:flex;flex-direction:column;position:relative;
-  overflow:hidden;
+  display:flex;flex-direction:column;position:relative;overflow:hidden;
 }
 .lcd-status{
   display:flex;align-items:center;justify-content:space-between;
@@ -251,6 +137,7 @@ button::-moz-focus-inner{border:0}
 .lcd-status .st.on{color:#fff;background:#f59e0b}
 .lcd-status .st.alpha.on{background:#dc2626}
 .lcd-status .st.sto.on{background:#10b981}
+.lcd-status .m-ind.on{color:#fff;background:#7c3aed}
 .lcd-status .angle-ind{
   padding:0 6px !important;border-radius:3px !important;
   font-size:7.5px !important;font-weight:800 !important;
@@ -261,16 +148,15 @@ button::-moz-focus-inner{border:0}
 .lcd-status .angle-ind.rad{background:linear-gradient(135deg,#dc2626,#b91c1c) !important}
 .lcd-status .angle-ind.gra{background:linear-gradient(135deg,#8b5cf6,#6d28d9) !important}
 
-.lcd-body{flex:1;position:relative;padding-top:6px;display:flex;flex-direction:column;cursor:text}
+.lcd-body{flex:1;position:relative;padding-top:5px;display:flex;flex-direction:column;cursor:text}
 .lcd-expr{
   font-size:14px;font-weight:600;color:#000;line-height:1.4;
   min-height:20px;letter-spacing:.3px;word-break:break-all;
   cursor:text;user-select:none;white-space:pre-wrap;
 }
 .cursor-blink{
-  display:inline-block;width:2px;height:14px;
-  background:#1a2b45;vertical-align:-2px;
-  animation:blink 1.05s step-end infinite;
+  display:inline-block;width:2px;height:14px;background:#1a2b45;
+  vertical-align:-2px;animation:blink 1.05s step-end infinite;
   margin:0 -1px;pointer-events:none;
 }
 @keyframes blink{50%{opacity:0}}
@@ -279,8 +165,8 @@ button::-moz-focus-inner{border:0}
 .tk.const{color:#c2410c;background:rgba(251,146,60,.12)}
 .tk.var{color:#7c3aed;background:rgba(124,58,237,.12)}
 .tk.fn{color:#059669;background:rgba(16,185,129,.12)}
-.history-badge{position:absolute;top:4px;right:10px;font-size:8.5px;font-weight:800;color:#2563eb;background:rgba(59,130,246,.12);padding:1px 6px;border-radius:99px;font-family:"Segoe UI",sans-serif;letter-spacing:.2px;z-index:5}
-.sto-toast{position:absolute;top:4px;left:10px;font-size:8.5px;font-weight:800;color:#059669;background:rgba(16,185,129,.15);padding:1px 6px;border-radius:99px;font-family:"Segoe UI",sans-serif;letter-spacing:.2px;z-index:5;display:none}
+.history-badge{position:absolute;top:2px;right:9px;font-size:8.5px;font-weight:800;color:#2563eb;background:rgba(59,130,246,.12);padding:1px 6px;border-radius:99px;font-family:"Segoe UI",sans-serif;letter-spacing:.2px;z-index:5}
+.sto-toast{position:absolute;top:2px;left:9px;font-size:8.5px;font-weight:800;color:#059669;background:rgba(16,185,129,.15);padding:1px 6px;border-radius:99px;font-family:"Segoe UI",sans-serif;letter-spacing:.2px;z-index:5;display:none}
 .sto-toast.show{display:block;animation:pop .3s ease-out}
 @keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
 .var-viewer{position:absolute;inset:0;background:linear-gradient(180deg,#f9fbff 0%,#eef3fb 100%);padding:4px 10px;z-index:10;display:none;flex-direction:column;font-family:"Consolas","Menlo",monospace}
@@ -347,18 +233,98 @@ button::-moz-focus-inner{border:0}
 .nbtn.eq .main-lbl{font-size:17px}
 .nbtn.eq:hover{filter:brightness(1.06)}
 
+.calc-fab{
+  position:fixed;right:18px;bottom:18px;z-index:10000;
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+  color:#fff;font-size:24px;line-height:1;
+  display:grid;place-items:center;
+  box-shadow:0 12px 28px -8px rgba(37,99,235,.75),inset 0 1px 0 rgba(255,255,255,.35);
+  cursor:pointer;
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s,background .2s;
+}
+.calc-fab:hover{transform:translateY(-2px) scale(1.06);box-shadow:0 16px 34px -10px rgba(37,99,235,.85),inset 0 1px 0 rgba(255,255,255,.35)}
+.calc-fab:active{transform:scale(.94)}
+.calc-fab.active{background:linear-gradient(135deg,#64748b,#475569);box-shadow:0 10px 24px -10px rgba(71,85,105,.85)}
+.calc-fab .fab-icon{display:block;transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
+.calc-fab.active .fab-icon{transform:rotate(90deg) scale(.9)}
+
+.calc-popup{
+  position:fixed;right:18px;bottom:86px;z-index:9999;
+  display:flex;flex-direction:column;width:fit-content;
+  border-radius:14px;background:#fff;
+  box-shadow:0 34px 70px -16px rgba(30,64,175,.55),
+             0 0 0 1.5px rgba(59,130,246,.65);
+  transform-origin:bottom right;overflow:hidden;
+  transition:opacity .22s ease,
+             transform .22s cubic-bezier(.34,1.4,.64,1),
+             visibility .22s;
+}
+.calc-popup.closed{
+  opacity:0;transform:translateY(18px) scale(.9);
+  visibility:hidden;pointer-events:none;
+}
+.calc-popup.collapsed .popup-body{display:none}
+
+.popup-bar{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 8px 6px 11px;
+  background:linear-gradient(180deg,#f4f8ff,#e2ecff);
+  border-bottom:1px solid var(--line);
+  cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;flex:none;
+}
+.popup-bar:active{cursor:grabbing}
+.popup-dot{
+  width:8px;height:8px;border-radius:50%;flex:none;
+  background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18);
+}
+.popup-title{
+  flex:1;min-width:0;font-size:11px;font-weight:800;color:#1e40af;
+  letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.pbtn{
+  width:22px;height:22px;flex:none;border-radius:6px;
+  border:1px solid #c7d9fd;background:#fff;color:#1e40af;
+  font-size:12px;font-weight:900;line-height:1;
+  display:grid;place-items:center;cursor:pointer;
+  transition:background .15s,color .15s,border-color .15s,transform .1s;
+}
+.pbtn:hover{background:#2563eb;border-color:#2563eb;color:#fff}
+.pbtn.close:hover{background:#dc2626;border-color:#dc2626}
+.pbtn:active{transform:scale(.9)}
+
+.popup-body{
+  padding:0;background:transparent;overflow:hidden;flex:none;line-height:0;
+}
+.popup-scaler{
+  display:block;transform-origin:top left;will-change:transform;line-height:0;
+}
+
+.calc-popup .emu-header{display:none !important}
+.calc-popup .emulator{
+  border:none;border-radius:0;box-shadow:none;width:380px;line-height:normal;
+}
+
 @media (max-width:640px){
-  .desktop{flex-direction:column}
-  .desktop.panel-open .emulator{border-radius:0 0 14px 14px}
-  .side-panel{width:100%;border-radius:14px 14px 0 0;border-right:1.5px solid var(--blue-2);border-bottom:none;padding:6px 8px}
-  .side-panel .sp-title{display:none}
-  .side-panel .sp-hint{display:none}
-  .side-panel .sp-eq{display:none}
-  .sp-close{top:2px;right:2px}
+  .calc-popup{right:6px;left:6px;bottom:78px;width:auto}
+  .calc-popup .emulator{width:100%}
+  .calc-fab{right:12px;bottom:12px;width:50px;height:50px;font-size:22px}
 }
 </style>
 </head>
 <body>
+
+<button class="calc-fab" id="calcFab" title="Mở máy tính"><span class="fab-icon">🧮</span></button>
+
+<div class="calc-popup" id="calcPopup">
+  <div class="popup-bar" id="popupBar">
+    <span class="popup-dot"></span>
+    <span class="popup-title">casioXtutus</span>
+    <button class="pbtn" id="popMin" title="Thu gọn">—</button>
+    <button class="pbtn close" id="popClose" title="Đóng">✕</button>
+  </div>
+  <div class="popup-body">
+    <div class="popup-scaler" id="popupScaler">
 
 <div class="desktop" id="desktop">
 
@@ -402,17 +368,12 @@ button::-moz-focus-inner{border:0}
   </aside>
 
   <div class="emulator">
-    <div class="emu-header">
-      <div class="emu-icon">▦</div>
-      <div class="emu-title">fx-580VN X [CY-298 A (91...</div>
-      <div class="emu-icons"><span>↺</span><span>↻</span><span>⟳</span><span>⚙</span></div>
-    </div>
 
     <div class="calc">
       <div class="lcd-frame">
         <div class="lcd">
           <div class="lcd-status">
-            <div class="group"><span>M</span><span>√e</span><span>⏱</span></div>
+            <div class="group"><span class="st m-ind" id="stM">M</span><span>√e</span><span>⏱</span></div>
             <div class="group">
               <span class="angle-ind" id="angleInd" title="Click đổi đơn vị góc">D</span>
               <span class="st" id="stShift">SHIFT</span>
@@ -488,10 +449,10 @@ button::-moz-focus-inner{border:0}
       <div class="pad-fn">
         <button class="kbtn" data-act="STO"><span class="sl">RECALL</span><span class="main-lbl">STO</span></button>
         <button class="kbtn" data-act="ENG"><span class="sl">←</span><span class="main-lbl">ENG</span></button>
-        <button class="kbtn" data-act="LPAR"><span class="sl">Abs</span><span class="main-lbl">(</span></button>
+        <button class="kbtn" data-act="LPAR"><span class="sl">Abs</span><span class="sr">X</span><span class="main-lbl">(</span></button>
         <button class="kbtn" data-act="RPAR"><span class="sl">;</span><span class="sr">Y</span><span class="main-lbl">)</span></button>
-        <button class="kbtn" data-act="SD"><span class="sl">y</span><span class="sr">M</span><span class="main-lbl">S⇔D</span></button>
-        <button class="kbtn" data-act="MPLUS"><span class="sl">M−</span><span class="sr">D</span><span class="main-lbl">M+</span></button>
+        <button class="kbtn" data-act="SD"><span class="sl">y</span><span class="sr">Z</span><span class="main-lbl">S⇔D</span></button>
+        <button class="kbtn" data-act="MPLUS"><span class="sl">M−</span><span class="sr">M</span><span class="main-lbl">M+</span></button>
       </div>
 
       <div class="pad-num">
@@ -531,107 +492,51 @@ button::-moz-focus-inner{border:0}
 
 </div>
 
+    </div><!-- /.popup-scaler -->
+  </div><!-- /.popup-body -->
+</div><!-- /.calc-popup -->
+
 <script>
 /* ============================================================
    BẢNG ĐƠN VỊ
    ============================================================ */
 const CONV_UNITS = {
-  length: {
-    label: 'Chiều dài',
-    units: {
-      m:    { name: 'mét',    factor: 1 },
-      cm:   { name: 'cm',     factor: 0.01 },
-      mm:   { name: 'mm',     factor: 0.001 },
-      km:   { name: 'km',     factor: 1000 },
-      inch: { name: 'inch',   factor: 0.0254 },
-      ft:   { name: 'feet',   factor: 0.3048 },
-      mile: { name: 'mile',   factor: 1609.344 },
-    }
-  },
-  mass: {
-    label: 'Khối lượng',
-    units: {
-      kg:  { name: 'kilogam', factor: 1 },
-      g:   { name: 'gam',     factor: 0.001 },
-      mg:  { name: 'miligam', factor: 1e-6 },
-      tan: { name: 'tấn',     factor: 1000 },
-      lb:  { name: 'pound',   factor: 0.45359237 },
-      oz:  { name: 'ounce',   factor: 0.028349523125 },
-    }
-  },
-  area: {
-    label: 'Diện tích',
-    units: {
-      m2:   { name: 'm²',     factor: 1 },
-      cm2:  { name: 'cm²',    factor: 1e-4 },
-      km2:  { name: 'km²',    factor: 1e6 },
-      ha:   { name: 'ha',     factor: 10000 },
-      acre: { name: 'acre',   factor: 4046.8564224 },
-    }
-  },
-  volume: {
-    label: 'Thể tích',
-    units: {
-      L:    { name: 'lít',    factor: 1 },
-      mL:   { name: 'mL',     factor: 0.001 },
-      m3:   { name: 'm³',     factor: 1000 },
-      cm3:  { name: 'cm³',    factor: 0.001 },
-      gal:  { name: 'gal (US)', factor: 3.785411784 },
-    }
-  },
-  time: {
-    label: 'Thời gian',
-    units: {
-      s:   { name: 'giây',     factor: 1 },
-      min: { name: 'phút',     factor: 60 },
-      h:   { name: 'giờ',      factor: 3600 },
-      day: { name: 'ngày',     factor: 86400 },
-      week:{ name: 'tuần',     factor: 604800 },
-    }
-  },
-  temp: {
-    label: 'Nhiệt độ',
-    isTemperature: true,
-    units: {
-      C: { name: '°C' },
-      F: { name: '°F' },
-      K: { name: 'K' },
-    }
-  },
-  energy: {
-    label: 'Năng lượng',
-    units: {
-      J:    { name: 'Joule',  factor: 1 },
-      cal:  { name: 'calo',   factor: 4.184 },
-      kcal: { name: 'kcal',   factor: 4184 },
-      kWh:  { name: 'kWh',    factor: 3.6e6 },
-    }
-  },
-  speed: {
-    label: 'Vận tốc',
-    units: {
-      ms:  { name: 'm/s',  factor: 1 },
-      kmh: { name: 'km/h', factor: 1/3.6 },
-      mph: { name: 'mph',  factor: 0.44704 },
-    }
-  },
-  pressure: {
-    label: 'Áp suất',
-    units: {
-      Pa:   { name: 'Pa',   factor: 1 },
-      kPa:  { name: 'kPa',  factor: 1000 },
-      atm:  { name: 'atm',  factor: 101325 },
-      mmHg: { name: 'mmHg', factor: 133.322387415 },
-      bar:  { name: 'bar',  factor: 1e5 },
-    }
-  }
+  length: { label:'Chiều dài', units:{
+    m:{name:'mét',factor:1}, cm:{name:'cm',factor:0.01}, mm:{name:'mm',factor:0.001},
+    km:{name:'km',factor:1000}, inch:{name:'inch',factor:0.0254},
+    ft:{name:'feet',factor:0.3048}, mile:{name:'mile',factor:1609.344}
+  }},
+  mass: { label:'Khối lượng', units:{
+    kg:{name:'kilogam',factor:1}, g:{name:'gam',factor:0.001}, mg:{name:'miligam',factor:1e-6},
+    tan:{name:'tấn',factor:1000}, lb:{name:'pound',factor:0.45359237}, oz:{name:'ounce',factor:0.028349523125}
+  }},
+  area: { label:'Diện tích', units:{
+    m2:{name:'m²',factor:1}, cm2:{name:'cm²',factor:1e-4}, km2:{name:'km²',factor:1e6},
+    ha:{name:'ha',factor:10000}, acre:{name:'acre',factor:4046.8564224}
+  }},
+  volume: { label:'Thể tích', units:{
+    L:{name:'lít',factor:1}, mL:{name:'mL',factor:0.001}, m3:{name:'m³',factor:1000},
+    cm3:{name:'cm³',factor:0.001}, gal:{name:'gal (US)',factor:3.785411784}
+  }},
+  time: { label:'Thời gian', units:{
+    s:{name:'giây',factor:1}, min:{name:'phút',factor:60}, h:{name:'giờ',factor:3600},
+    day:{name:'ngày',factor:86400}, week:{name:'tuần',factor:604800}
+  }},
+  temp: { label:'Nhiệt độ', isTemperature:true, units:{ C:{name:'°C'}, F:{name:'°F'}, K:{name:'K'} }},
+  energy: { label:'Năng lượng', units:{
+    J:{name:'Joule',factor:1}, cal:{name:'calo',factor:4.184},
+    kcal:{name:'kcal',factor:4184}, kWh:{name:'kWh',factor:3.6e6}
+  }},
+  speed: { label:'Vận tốc', units:{
+    ms:{name:'m/s',factor:1}, kmh:{name:'km/h',factor:1/3.6}, mph:{name:'mph',factor:0.44704}
+  }},
+  pressure: { label:'Áp suất', units:{
+    Pa:{name:'Pa',factor:1}, kPa:{name:'kPa',factor:1000}, atm:{name:'atm',factor:101325},
+    mmHg:{name:'mmHg',factor:133.322387415}, bar:{name:'bar',factor:1e5}
+  }}
 };
 
-/* ============================================================
-   DOM
-   ============================================================ */
 const desktop      = document.getElementById('desktop');
-const sidePanel    = document.getElementById('sidePanel');
 const spClose      = document.getElementById('spClose');
 const convCategory = document.getElementById('convCategory');
 const convFrom     = document.getElementById('convFrom');
@@ -648,10 +553,8 @@ for(const [key, val] of Object.entries(CONV_UNITS)){
 }
 
 function populateUnits(){
-  const cat = convCategory.value;
-  const c = CONV_UNITS[cat];
-  convFrom.innerHTML = '';
-  convTo.innerHTML = '';
+  const c = CONV_UNITS[convCategory.value];
+  convFrom.innerHTML = ''; convTo.innerHTML = '';
   const keys = Object.keys(c.units);
   keys.forEach(k => {
     const o1 = document.createElement('option');
@@ -665,157 +568,111 @@ function populateUnits(){
 }
 populateUnits();
 
-/* ============================================================
-   CHUYỂN ĐỔI
-   ============================================================ */
 function convertValue(val, cat, from, to){
   const c = CONV_UNITS[cat];
   if(c.isTemperature){
-    let cVal;
-    if(from === 'C') cVal = val;
-    else if(from === 'F') cVal = (val - 32) * 5/9;
-    else if(from === 'K') cVal = val - 273.15;
-    if(to === 'C') return cVal;
-    if(to === 'F') return cVal * 9/5 + 32;
-    if(to === 'K') return cVal + 273.15;
+    let cv;
+    if(from==='C') cv = val;
+    else if(from==='F') cv = (val-32)*5/9;
+    else if(from==='K') cv = val-273.15;
+    if(to==='C') return cv;
+    if(to==='F') return cv*9/5+32;
+    if(to==='K') return cv+273.15;
     return null;
-  } else {
-    const fU = c.units[from];
-    const tU = c.units[to];
-    if(!fU || !tU) return null;
-    return (val * fU.factor) / tU.factor;
   }
+  const fU = c.units[from], tU = c.units[to];
+  if(!fU||!tU) return null;
+  return (val*fU.factor)/tU.factor;
 }
-
-/* Đọc giá trị từ ô input (không dùng Ans nữa) */
 function getInputValue(){
   let v = convInput.value.trim().replace(',', '.');
   if(!v) v = '0';
   const n = parseFloat(v);
-  if(isNaN(n)) return null;
-  return n;
+  return isNaN(n) ? null : n;
 }
-
 function updateConv(){
   const val = getInputValue();
-  const cat = convCategory.value;
-  const from = convFrom.value;
-  const to   = convTo.value;
+  const cat = convCategory.value, from = convFrom.value, to = convTo.value;
   const c = CONV_UNITS[cat];
-
-  if(val === null){
-    convResultEl.textContent = '—';
-    convEq.textContent = 'Giá trị không hợp lệ';
-    return;
-  }
-
+  if(val === null){ convResultEl.textContent='—'; convEq.textContent='Giá trị không hợp lệ'; return; }
   const r = convertValue(val, cat, from, to);
-  if(r === null){ convResultEl.textContent = '—'; convEq.textContent = '—'; return; }
-  const vf = formatResult(val);
-  const rf = formatResult(r);
+  if(r === null){ convResultEl.textContent='—'; convEq.textContent='—'; return; }
+  const vf = formatResult(val), rf = formatResult(r);
   convResultEl.textContent = rf;
   convEq.textContent = `${vf} ${c.units[from].name} = ${rf} ${c.units[to].name}`;
 }
-
-/* Sự kiện */
-convCategory.addEventListener('change', () => { populateUnits(); updateConv(); });
+convCategory.addEventListener('change', () => { populateUnits(); updateConv(); requestAnimationFrame(fitPopup); });
 convFrom.addEventListener('change', updateConv);
 convTo.addEventListener('change', updateConv);
 convInput.addEventListener('input', updateConv);
-convInput.addEventListener('keydown', (e) => {
-  /* cho phép gõ số, dấu chấm, dấu trừ */
-  if(e.key === 'Enter'){ convInput.blur(); }
-  e.stopPropagation();
-});
-
-/* Đảo chiều */
+convInput.addEventListener('keydown', e => { if(e.key==='Enter') convInput.blur(); e.stopPropagation(); });
 convSwap.addEventListener('click', () => {
   const f = convFrom.value, t = convTo.value;
-  convFrom.value = t;
-  convTo.value = f;
+  convFrom.value = t; convTo.value = f;
   updateConv();
 });
 
-/* ============================================================
-   MỞ / ĐÓNG PANEL
-   ============================================================ */
 function openPanel(){
   desktop.classList.add('panel-open');
   setTimeout(() => { convInput.focus(); convInput.select(); }, 50);
   updateConv();
+  requestAnimationFrame(fitPopup);
 }
 function closePanel(){
   desktop.classList.remove('panel-open');
+  requestAnimationFrame(fitPopup);
 }
 function togglePanel(){
-  if(desktop.classList.contains('panel-open')) closePanel();
-  else openPanel();
+  if(desktop.classList.contains('panel-open')) closePanel(); else openPanel();
 }
 spClose.addEventListener('click', closePanel);
 
 /* ============================================================
    STATE CALC
    ============================================================ */
-let expr = '';
-let result = '';
-let resultDecimal = '';
-let resultRaw = 0;
-let resultFormats = [];
-let resultFormatIdx = -1;
-let cursor = 0;
-let justEvaluated = false;
-
-let ans = 0;
-let preAns = 0;
-let angleUnit = 'deg';
-
-const vars = { A:0, B:0, C:0, D:0, E:0, F:0, X:0, Y:0, M:0 };
+let expr = '', result = '', resultDecimal = '', resultRaw = 0;
+let resultFormats = [], resultFormatIdx = -1;
+let cursor = 0, justEvaluated = false;
+let ans = 0, preAns = 0, angleUnit = 'deg';
+const vars = { A:0, B:0, C:0, D:0, E:0, F:0, X:0, Y:0, Z:0, M:0 };
 const VAR_MAP = {
   'NEG':'A','DMS':'B','XINV':'C','SIN':'E',
-  'COS':'F','TAN':'X','RPAR':'Y','SD':'M','MPLUS':'D',
+  'COS':'F','TAN':'X','LPAR':'X','RPAR':'Y','SD':'Z'
+  /* MPLUS không map qua đây, xử lý riêng */
 };
-
-let shiftActive = false;
-let alphaActive = false;
-let stoActive = false;
-
+let shiftActive = false, alphaActive = false, stoActive = false;
 const history = [];
-let historyIndex = -1;
-let tempExpr = '';
-let tempCursor = 0;
+let historyIndex = -1, tempExpr = '', tempCursor = 0;
 
-const lcdExpr   = document.getElementById('lcdExpr');
+const lcdExpr = document.getElementById('lcdExpr');
 const lcdResult = document.getElementById('lcdResult');
-const lcdBody   = document.getElementById('lcdBody');
+const lcdBody = document.getElementById('lcdBody');
 const historyBadge = document.getElementById('historyBadge');
-const stoToast  = document.getElementById('stoToast');
+const stoToast = document.getElementById('stoToast');
 const varViewer = document.getElementById('varViewer');
-const vvGrid    = document.getElementById('vvGrid');
+const vvGrid = document.getElementById('vvGrid');
 const stShiftEl = document.getElementById('stShift');
 const stAlphaEl = document.getElementById('stAlpha');
-const stStoEl   = document.getElementById('stSto');
-const angleInd  = document.getElementById('angleInd');
+const stStoEl = document.getElementById('stSto');
+const stMEl = document.getElementById('stM');
+const angleInd = document.getElementById('angleInd');
 
 function updateStatusBar(){
   stShiftEl.classList.toggle('on', shiftActive);
   stAlphaEl.classList.toggle('on', alphaActive);
   stStoEl.classList.toggle('on', stoActive);
+  stMEl.classList.toggle('on', vars.M !== 0);
   angleInd.textContent = angleUnit === 'deg' ? 'D' : (angleUnit === 'rad' ? 'R' : 'G');
   angleInd.classList.toggle('rad', angleUnit === 'rad');
   angleInd.classList.toggle('gra', angleUnit === 'gra');
 }
-
-function setAngleUnit(unit){
-  angleUnit = unit;
-  updateStatusBar();
-  showStoToast(`📐 ${unit.toUpperCase()}`);
-}
+function setAngleUnit(unit){ angleUnit = unit; updateStatusBar(); showStoToast(`📐 ${unit.toUpperCase()}`); }
 function toggleAngleUnit(){
   if(angleUnit === 'deg') setAngleUnit('rad');
   else if(angleUnit === 'rad') setAngleUnit('gra');
   else setAngleUnit('deg');
 }
-angleInd.addEventListener('click', (e) => { e.stopPropagation(); toggleAngleUnit(); });
+angleInd.addEventListener('click', e => { e.stopPropagation(); toggleAngleUnit(); });
 
 function showStoToast(msg){
   stoToast.textContent = msg;
@@ -824,13 +681,11 @@ function showStoToast(msg){
   showStoToast._t = setTimeout(() => stoToast.classList.remove('show'), 1600);
 }
 
-/* VAR VIEWER */
 let varViewerTimer = null;
 function showVarViewer(){
-  const order = ['A','B','C','D','E','F','X','Y','M'];
+  const order = ['A','B','C','D','E','F','X','Y','Z','M'];
   vvGrid.innerHTML = order.map(v => {
-    const val = vars[v];
-    const display = formatResult(val);
+    const val = vars[v], display = formatResult(val);
     return `<div class="vv-item"><span class="k">${v}</span><span class="v" title="${display}">${display}</span></div>`;
   }).join('');
   varViewer.classList.add('show');
@@ -838,14 +693,11 @@ function showVarViewer(){
   varViewerTimer = setTimeout(() => varViewer.classList.remove('show'), 2500);
 }
 
-/* HELPERS */
-function gcd(a, b){ a = Math.abs(a); b = Math.abs(b); while(b){ [a,b] = [b, a%b]; } return a || 1; }
-
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ [a,b]=[b,a%b]; } return a||1; }
 function toSuperscript(n){
   const SUP = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻','+':''};
   return String(n).split('').map(c => SUP[c] !== undefined ? SUP[c] : c).join('');
 }
-
 function formatResult(val){
   if(val === 0) return '0';
   if(!isFinite(val)) return 'Math ERROR';
@@ -856,58 +708,51 @@ function formatResult(val){
   const [mRaw, eRaw] = s.split('e');
   let e = parseInt(eRaw, 10);
   let m = mRaw.replace(/\.?0+$/, '');
-  if(m === '10' || m === '-10'){ m = m.replace('10', '1'); e++; }
+  if(m === '10' || m === '-10'){ m = m.replace('10','1'); e++; }
   return `${m}×10${toSuperscript(e)}`;
 }
-
 function decimalToFraction(x, maxDenom = 1000000){
   if(!isFinite(x)) return null;
   const sign = x < 0 ? -1 : 1;
   const absX = Math.abs(x);
   const intPart = Math.floor(absX);
   const fracPart = absX - intPart;
-  if(fracPart < 1e-12) return { num: sign * intPart, den: 1 };
-  let h1 = 1, h2 = 0, k1 = 0, k2 = 1;
-  let b = fracPart;
-  let safety = 0;
+  if(fracPart < 1e-12) return { num: sign*intPart, den: 1 };
+  let h1=1, h2=0, k1=0, k2=1, b=fracPart, safety=0;
   while(safety++ < 30){
     const a = Math.floor(b);
-    const nh = a * h1 + h2;
-    const nk = a * k1 + k2;
-    h2 = h1; h1 = nh; k2 = k1; k1 = nk;
+    const nh = a*h1+h2, nk = a*k1+k2;
+    h2=h1; h1=nh; k2=k1; k1=nk;
     if(k1 > maxDenom) return null;
-    const approx = intPart + h1 / k1;
-    if(Math.abs(approx - absX) < 1e-11){ const num = sign * (intPart * k1 + h1); return { num, den: k1 }; }
+    const approx = intPart + h1/k1;
+    if(Math.abs(approx - absX) < 1e-11){ const num = sign*(intPart*k1+h1); return { num, den:k1 }; }
     const rem = b - a;
     if(rem < 1e-12) break;
-    b = 1 / rem;
+    b = 1/rem;
   }
   return null;
 }
-
 function analyzePeriodic(num, den){
-  const g = gcd(num, den);
-  num = Math.trunc(num / g); den = Math.trunc(den / g);
+  const g = gcd(num,den);
+  num = Math.trunc(num/g); den = Math.trunc(den/g);
   if(den === 1) return null;
   const sign = num < 0 ? -1 : 1;
   const absNum = Math.abs(num);
-  const intPart = Math.floor(absNum / den);
+  const intPart = Math.floor(absNum/den);
   const rem = absNum % den;
-  let d = den, c2 = 0, c5 = 0;
-  while(d % 2 === 0){ d /= 2; c2++; }
-  while(d % 5 === 0){ d /= 5; c5++; }
+  let d=den, c2=0, c5=0;
+  while(d%2===0){ d/=2; c2++; }
+  while(d%5===0){ d/=5; c5++; }
   if(d === 1) return null;
   let r = rem;
-  const digits = [];
-  const seen = new Map();
-  let startCycle = -1;
-  let idx = 0;
+  const digits = [], seen = new Map();
+  let startCycle = -1, idx = 0;
   while(idx < 40){
     if(r === 0) break;
     if(seen.has(r)){ startCycle = seen.get(r); break; }
     seen.set(r, idx);
     r *= 10;
-    digits.push(Math.floor(r / den));
+    digits.push(Math.floor(r/den));
     r %= den;
     idx++;
   }
@@ -917,7 +762,6 @@ function analyzePeriodic(num, den){
   if(repeatDigits.length > 20) return null;
   return { sign, intPart, nonRepeatDigits, repeatDigits };
 }
-
 function buildFormats(decimalStr){
   const val = parseFloat(decimalStr);
   if(!isFinite(val) || !decimalStr) return [];
@@ -925,16 +769,14 @@ function buildFormats(decimalStr){
   const frac = decimalToFraction(val);
   if(!frac) return [];
   const g = gcd(frac.num, frac.den);
-  const n = Math.trunc(frac.num / g);
-  const d = Math.trunc(frac.den / g);
+  const n = Math.trunc(frac.num/g), d = Math.trunc(frac.den/g);
   if(d === 1) return [];
   const formats = [];
   formats.push({ type:'fraction', text: `${n}/${d}` });
   const absN = Math.abs(n);
   if(absN > d){
     const sign = n < 0 ? '-' : '';
-    const whole = Math.floor(absN / d);
-    const r = absN % d;
+    const whole = Math.floor(absN/d), r = absN % d;
     formats.push({ type:'mixed', text: `${sign}${whole} ${r}/${d}` });
   }
   const ana = analyzePeriodic(n, d);
@@ -953,7 +795,7 @@ function buildFormats(decimalStr){
   return formats;
 }
 
-const DELETE_TOKENS = ['sin⁻¹(', 'cos⁻¹(', 'tan⁻¹(', 'PreAns', '×10^(', 'sin(', 'cos(', 'tan(', 'log(', 'ln(', 'abs(', '√(', '∛(', 'Ans'];
+const DELETE_TOKENS = ['sin⁻¹(','cos⁻¹(','tan⁻¹(','PreAns','×10^(','sin(','cos(','tan(','log(','ln(','abs(','√(','∛(','Ans'];
 
 function render(){
   let html = '';
@@ -979,7 +821,7 @@ function render(){
     if(s[i] === 'π'){ html += `<span class="tk const" data-i="${i}" data-len="1">π</span>`; i++; continue; }
     if(s[i] === 'e'){ html += `<span class="tk const" data-i="${i}" data-len="1">e</span>`; i++; continue; }
     if(s[i] === '%'){ html += `<span class="tk const" data-i="${i}" data-len="1">%</span>`; i++; continue; }
-    if('ABCDEFXYM'.includes(s[i])){
+    if('ABCDEFXYZM'.includes(s[i])){
       html += `<span class="tk var" data-i="${i}" data-len="1">${s[i]}</span>`;
       i++; continue;
     }
@@ -1027,7 +869,7 @@ function evaluate(raw){
   s = s.replace(/∛\(/g, 'cbrt(');
   s = s.replace(/√/g, 'sqrt');
   s = s.replace(/∛/g, 'cbrt');
-  s = s.replace(/([ABCDEFXYM])/g, (m, v) => '(' + vars[v] + ')');
+  s = s.replace(/([ABCDEFXYZM])/g, (m, v) => '(' + vars[v] + ')');
   s = s.replace(/π/g, '(' + Math.PI + ')');
   try{
     s = s.replace(/(?<![0-9.a-zA-Z_])e(?![0-9])/g, '(' + Math.E + ')');
@@ -1074,6 +916,7 @@ function deleteAtCursor(){
   cursor--;
 }
 
+/* S ⇔ D : đổi qua lại giữa thập phân và phân số (chu kỳ nếu có) */
 function toggleSD(){
   if(!justEvaluated || !resultDecimal) return;
   if(resultDecimal.includes('×10')) return;
@@ -1088,8 +931,51 @@ function toggleSD(){
   if(resultFormatIdx >= resultFormats.length){
     resultFormatIdx = -1;
     result = formatResult(val);
+    showStoToast('Thập phân');
   } else {
     result = resultFormats[resultFormatIdx].text;
+    const t = resultFormats[resultFormatIdx].type;
+    if(t === 'fraction') showStoToast('d/c  (phân số)');
+    else if(t === 'mixed') showStoToast('ab/c  (hỗn số)');
+    else if(t === 'periodic') showStoToast('Chu kỳ');
+  }
+  render();
+}
+
+/* SHIFT + S ⇔ D : đổi giữa phân số (d/c) và hỗn số (ab/c) */
+function toggleSDMixed(){
+  if(!justEvaluated || !resultDecimal) return;
+  if(resultDecimal.includes('×10')) return;
+  const val = resultRaw;
+  if(!isFinite(val)) return;
+  if(Number.isInteger(val)){
+    showStoToast('Không đổi được');
+    return;
+  }
+  if(resultFormats.length === 0){
+    resultFormats = buildFormats(String(val));
+    if(resultFormats.length === 0){
+      showStoToast('Không đổi được');
+      return;
+    }
+  }
+
+  const fracIdx  = resultFormats.findIndex(f => f.type === 'fraction');
+  const mixedIdx = resultFormats.findIndex(f => f.type === 'mixed');
+  if(fracIdx === -1 || mixedIdx === -1){
+    showStoToast('Không đổi được');
+    return;
+  }
+
+  const cur = result;
+  if(cur === resultFormats[fracIdx].text){
+    resultFormatIdx = mixedIdx;
+    result = resultFormats[mixedIdx].text;
+    showStoToast('ab/c  (hỗn số)');
+  } else {
+    resultFormatIdx = fracIdx;
+    result = resultFormats[fracIdx].text;
+    showStoToast('d/c  (phân số)');
   }
   render();
 }
@@ -1099,13 +985,9 @@ function historyPrev(){
   if(historyIndex === -1){ tempExpr = expr; tempCursor = cursor; historyIndex = 0; }
   else historyIndex = Math.min(history.length - 1, historyIndex + 1);
   const item = history[historyIndex];
-  expr = item.expr;
-  resultRaw = item.raw;
-  resultDecimal = item.result;
-  result = item.result;
+  expr = item.expr; resultRaw = item.raw; resultDecimal = item.result; result = item.result;
   resultFormats = []; resultFormatIdx = -1;
-  cursor = expr.length;
-  justEvaluated = true;
+  cursor = expr.length; justEvaluated = true;
   render();
 }
 function historyNext(){
@@ -1119,13 +1001,9 @@ function historyNext(){
     render(); return;
   }
   const item = history[historyIndex];
-  expr = item.expr;
-  resultRaw = item.raw;
-  resultDecimal = item.result;
-  result = item.result;
+  expr = item.expr; resultRaw = item.raw; resultDecimal = item.result; result = item.result;
   resultFormats = []; resultFormatIdx = -1;
-  cursor = expr.length;
-  justEvaluated = true;
+  cursor = expr.length; justEvaluated = true;
   render();
 }
 
@@ -1133,12 +1011,7 @@ function handle(act){
   if(act === 'SHIFT'){ shiftActive = !shiftActive; alphaActive = false; stoActive = false; updateStatusBar(); return; }
   if(act === 'ALPHA'){ alphaActive = !alphaActive; shiftActive = false; stoActive = false; updateStatusBar(); return; }
 
-  if(act === '8' && shiftActive){
-    togglePanel();
-    shiftActive = false;
-    updateStatusBar();
-    return;
-  }
+  if(act === '8' && shiftActive){ togglePanel(); shiftActive = false; updateStatusBar(); return; }
 
   if(act === 'MENU'){
     if(shiftActive){ toggleAngleUnit(); shiftActive = false; updateStatusBar(); return; }
@@ -1178,6 +1051,57 @@ function handle(act){
     insertAtCursor('√('); render(); return;
   }
 
+  /* M+ / M− / ALPHA-M */
+  if(act === 'MPLUS'){
+    if(alphaActive){
+      insertAtCursor('M');
+      alphaActive = false; updateStatusBar(); render(); return;
+    }
+
+    let val;
+    if(justEvaluated){
+      val = resultRaw;
+    } else if(expr.trim()){
+      const open  = (expr.match(/\(/g) || []).length;
+      const close = (expr.match(/\)/g) || []).length;
+      const fixed = expr + ')'.repeat(Math.max(0, open - close));
+      val = evaluate(fixed);
+      if(val === null){
+        showStoToast('Math ERROR');
+        shiftActive = false; updateStatusBar();
+        return;
+      }
+      preAns = ans;
+      ans = val;
+      resultRaw = val;
+      resultDecimal = formatResult(val);
+      result = resultDecimal;
+      resultFormats = []; resultFormatIdx = -1;
+      expr = fixed;
+      cursor = expr.length;
+      justEvaluated = true;
+      history.unshift({ expr: fixed, result: resultDecimal, raw: val });
+      if(history.length > 30) history.pop();
+      historyIndex = -1;
+    } else {
+      val = ans;
+    }
+
+    if(shiftActive){
+      vars.M -= val;
+      showStoToast(`M− : M = ${formatResult(vars.M)}`);
+      shiftActive = false;
+    } else {
+      vars.M += val;
+      showStoToast(`M+ : M = ${formatResult(vars.M)}`);
+    }
+
+    updateStatusBar();
+    render();
+    return;
+  }
+
+  /* ALPHA + phím có trong VAR_MAP (LPAR->X, RPAR->Y, SD->Z, ...) */
   if(alphaActive && VAR_MAP[act]){
     insertAtCursor(VAR_MAP[act]); alphaActive = false; updateStatusBar(); render(); return;
   }
@@ -1194,7 +1118,18 @@ function handle(act){
     insertAtCursor('×10^('); render(); return;
   }
 
-  if(act === 'SD'){ toggleSD(); return; }
+  /* S ⇔ D  /  SHIFT + S ⇔ D */
+  if(act === 'SD'){
+    if(shiftActive){
+      toggleSDMixed();
+      shiftActive = false;
+      updateStatusBar();
+      return;
+    }
+    toggleSD();
+    return;
+  }
+
   if(act === 'UP'){ historyPrev(); return; }
   if(act === 'DOWN'){ historyNext(); return; }
 
@@ -1216,8 +1151,7 @@ function handle(act){
       resultFormats = []; resultFormatIdx = -1;
       cursor = 0; justEvaluated = false;
     } else if(['ADD','SUB','MUL','DIV','LPAR'].includes(act)){
-      expr = String(resultRaw);
-      cursor = expr.length;
+      expr = String(resultRaw); cursor = expr.length;
       result = ''; resultDecimal = ''; resultRaw = 0;
       resultFormats = []; resultFormatIdx = -1;
       justEvaluated = false;
@@ -1229,8 +1163,7 @@ function handle(act){
   if(/^[0-9]$/.test(act)){ insertAtCursor(act); render(); return; }
 
   if(act === 'DOT'){
-    const before = expr.slice(0, cursor);
-    const after  = expr.slice(cursor);
+    const before = expr.slice(0, cursor), after = expr.slice(cursor);
     const curNum = (before.match(/[0-9.]*$/)[0] || '') + (after.match(/^[0-9.]*/)[0] || '');
     if(curNum.includes('.')) return;
     const prevCh = expr[cursor - 1];
@@ -1286,16 +1219,12 @@ function handle(act){
       render(); return;
     }
 
-    preAns = ans;
-    ans = val;
-
+    preAns = ans; ans = val;
     resultRaw = val;
     resultDecimal = formatResult(val);
     result = resultDecimal;
     resultFormats = []; resultFormatIdx = -1;
-    expr = fixed;
-    cursor = expr.length;
-    justEvaluated = true;
+    expr = fixed; cursor = expr.length; justEvaluated = true;
 
     history.unshift({ expr: fixed, result: resultDecimal, raw: val });
     if(history.length > 30) history.pop();
@@ -1312,7 +1241,6 @@ function handle(act){
   }
 }
 
-/* ============ CLICK LCD ============ */
 lcdExpr.addEventListener('click', (e) => {
   if(historyIndex >= 0){ historyIndex = -1; }
   const target = e.target.closest('.ch, .tk');
@@ -1344,7 +1272,6 @@ varViewer.addEventListener('click', () => {
   clearTimeout(varViewerTimer);
 });
 
-/* ============ NÚT ============ */
 document.querySelector('.emulator').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-act]');
   if(!btn) return;
@@ -1362,19 +1289,15 @@ document.querySelector('.emulator').addEventListener('click', (e) => {
   handle(act);
   if(act !== 'SHIFT' && act !== 'ALPHA' && act !== 'STO' && act !== 'MENU'){
     if(shiftActive || alphaActive || stoActive){
-      if(!(act === 'ANS' || act === 'EXP' || VAR_MAP[act])){
+      if(!(act === 'ANS' || act === 'EXP' || VAR_MAP[act] || act === 'MPLUS' || act === 'SD')){
         shiftActive = false; alphaActive = false; stoActive = false; updateStatusBar();
       }
     }
   }
 });
 
-/* ============ BÀN PHÍM VẬT LÝ ============ */
 document.addEventListener('keydown', (e) => {
-  /* Bỏ qua nếu đang focus vào ô CONV */
-  if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT'){
-    return;
-  }
+  if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   const k = e.key;
   if(/^[0-9]$/.test(k)){ handle(k); e.preventDefault(); return; }
   if(k === '.'){ handle('DOT'); e.preventDefault(); return; }
@@ -1393,9 +1316,136 @@ document.addEventListener('keydown', (e) => {
   if(k === 'ArrowDown'){ handle('DOWN'); e.preventDefault(); return; }
 });
 
+/* ============================================================
+   POPUP
+   ============================================================ */
+const calcFab   = document.getElementById('calcFab');
+const calcPopup = document.getElementById('calcPopup');
+const popupBar  = document.getElementById('popupBar');
+const popMin    = document.getElementById('popMin');
+const popClose  = document.getElementById('popClose');
+const popupScaler = document.getElementById('popupScaler');
+
+const POP_KEY = 'fx580vnx_popup_state';
+let popupState = 'open';
+try{ popupState = localStorage.getItem(POP_KEY) || 'open'; }catch(_){}
+if(!['open','collapsed','closed'].includes(popupState)) popupState = 'open';
+
+function fitPopup(){
+  if(!popupScaler || popupState === 'closed') return;
+
+  popupScaler.style.transform = '';
+  popupScaler.style.width = '';
+  popupScaler.style.height = '';
+
+  void popupScaler.offsetWidth;
+
+  const natW = desktop.offsetWidth;
+  const natH = desktop.offsetHeight;
+  if(!natW || !natH) return;
+
+  const barH = popupBar.offsetHeight;
+  const isMobile = window.matchMedia('(max-width:640px)').matches;
+
+  const reserveBottom = isMobile ? 84 : 92;
+  const availH = window.innerHeight - 12 - reserveBottom - barH;
+  const availW = window.innerWidth - (isMobile ? 14 : 30);
+
+  if(availH <= 0 || availW <= 0) return;
+
+  const scale = Math.min(availW / natW, availH / natH, 1);
+  if(scale < 0.999){
+    popupScaler.style.transform = `scale(${scale})`;
+    popupScaler.style.width  = (natW * scale) + 'px';
+    popupScaler.style.height = (natH * scale) + 'px';
+  }
+}
+
+let fitRaf = null;
+function scheduleFit(){
+  if(fitRaf) cancelAnimationFrame(fitRaf);
+  fitRaf = requestAnimationFrame(() => {
+    fitRaf = null;
+    fitPopup();
+    clampPopupPosition();
+  });
+}
+
+function applyPopupState(){
+  calcPopup.classList.toggle('closed', popupState === 'closed');
+  calcPopup.classList.toggle('collapsed', popupState === 'collapsed');
+  calcFab.classList.toggle('active', popupState !== 'closed');
+  popMin.textContent = popupState === 'collapsed' ? '❐' : '—';
+  popMin.title = popupState === 'collapsed' ? 'Mở rộng' : 'Thu gọn';
+  calcFab.title = popupState === 'closed' ? 'Mở máy tính' : 'Đóng máy tính';
+}
+function setPopupState(s){
+  popupState = s;
+  try{ localStorage.setItem(POP_KEY, s); }catch(_){}
+  applyPopupState();
+  if(s !== 'closed'){
+    clampPopupPosition();
+    requestAnimationFrame(fitPopup);
+  }
+}
+applyPopupState();
+
+calcFab.addEventListener('click', () => {
+  setPopupState(popupState === 'closed' ? 'open' : 'closed');
+});
+popMin.addEventListener('click', e => { e.stopPropagation(); setPopupState(popupState === 'collapsed' ? 'open' : 'collapsed'); });
+popClose.addEventListener('click', e => { e.stopPropagation(); setPopupState('closed'); });
+popupBar.addEventListener('dblclick', e => {
+  if(e.target.closest('.pbtn')) return;
+  setPopupState(popupState === 'collapsed' ? 'open' : 'collapsed');
+});
+
+let popupDrag = null;
+function clampPopupPosition(){
+  if(!calcPopup.style.left) return;
+  const r = calcPopup.getBoundingClientRect();
+  const x = Math.max(6, Math.min(window.innerWidth - r.width - 6, r.left));
+  const y = Math.max(6, Math.min(window.innerHeight - r.height - 6, r.top));
+  calcPopup.style.left = x + 'px';
+  calcPopup.style.top = y + 'px';
+}
+popupBar.addEventListener('pointerdown', e => {
+  if(e.target.closest('.pbtn')) return;
+  const r = calcPopup.getBoundingClientRect();
+  calcPopup.style.right = 'auto';
+  calcPopup.style.bottom = 'auto';
+  calcPopup.style.left = r.left + 'px';
+  calcPopup.style.top = r.top + 'px';
+  popupDrag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+  try{ popupBar.setPointerCapture(e.pointerId); }catch(_){}
+});
+popupBar.addEventListener('pointermove', e => {
+  if(!popupDrag) return;
+  const w = calcPopup.offsetWidth, h = calcPopup.offsetHeight;
+  const x = Math.max(6, Math.min(window.innerWidth - w - 6, e.clientX - popupDrag.dx));
+  const y = Math.max(6, Math.min(window.innerHeight - h - 6, e.clientY - popupDrag.dy));
+  calcPopup.style.left = x + 'px';
+  calcPopup.style.top = y + 'px';
+});
+function endPopupDrag(e){
+  if(!popupDrag) return;
+  popupDrag = null;
+  try{ popupBar.releasePointerCapture(e.pointerId); }catch(_){}
+}
+popupBar.addEventListener('pointerup', endPopupDrag);
+popupBar.addEventListener('pointercancel', endPopupDrag);
+
+window.addEventListener('resize', scheduleFit);
+window.addEventListener('orientationchange', () => setTimeout(scheduleFit, 200));
+
 updateStatusBar();
 render();
 updateConv();
+
+requestAnimationFrame(fitPopup);
+setTimeout(fitPopup, 80);
+window.addEventListener('load', fitPopup);
+if(document.fonts && document.fonts.ready){ document.fonts.ready.then(() => fitPopup()); }
 </script>
 </body>
 </html>
