@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Máy tính fx-580VN X</title>
+<style>
+*{box-sizing:border-box}
+:root{--ink:#1a2b45;--muted:#7b8a99;--blue:#2563eb;--blue-2:#3b82f6;--blue-soft:#dbeafe;--blue-deep:#1d4ed8;--line:#dbe5f2}
+html,body{
+  margin:0;padding:0;width:100%;height:100%;
+  background:transparent;overflow:hidden;
+  font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  color:var(--ink);
+  -webkit-user-select:none;user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+button{outline:none!important;-webkit-tap-highlight-color:transparent;font-family:inherit;border:none;cursor:pointer;padding:0}
+button:focus{outline:none!important}
+button::-moz-focus-inner{border:0}
+
+/* ============ CALCULATOR fx-580VN X ============ */
+.calc-panel{position:fixed;top:80px;right:20px;width:440px;height:640px;min-width:340px;min-height:440px;background:#e7c8bc;border:1.5px solid #c99a8b;border-radius:20px;box-shadow:0 25px 50px -20px rgba(120,60,40,.55),0 6px 16px -8px rgba(120,60,40,.35),inset 0 1px 0 rgba(255,255,255,.3);z-index:95;display:none;flex-direction:column;overflow:visible;animation:popupIn .2s ease-out}
+.calc-panel.show{display:flex}
+.calc-panel.dragging,.calc-panel.resizing{transition:none}
+.calc-head{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;background:linear-gradient(180deg,#ecd0c5,#dcb3a5);border-bottom:1px solid #c99a8b;cursor:grab;user-select:none;touch-action:none;border-radius:20px 20px 0 0;flex:none}
+.calc-head.dragging{cursor:grabbing}
+.calc-drag{font-size:13px;color:#9c6552;font-weight:900;letter-spacing:-1px;flex:none}
+.calc-title{flex:1;font-size:12.5px;font-weight:800;color:#7a3a20}
+.calc-close,.calc-min-btn{width:26px;height:26px;border:none;background:transparent;border-radius:7px;color:#7a3a20;cursor:pointer;display:grid;place-items:center;font-size:12px;transition:all .15s;padding:0}
+.calc-close:hover{background:#fee2e2;color:#dc2626}
+.calc-min-btn{font-size:16px;font-weight:900;line-height:1}
+.calc-min-btn:hover{background:#fde68a;color:#b45309}
+.calc-resize{position:absolute;z-index:10}
+.calc-resize[data-dir="n"]{top:-4px;left:22px;right:22px;height:8px;cursor:ns-resize}
+.calc-resize[data-dir="s"]{bottom:-4px;left:22px;right:22px;height:8px;cursor:ns-resize}
+.calc-resize[data-dir="e"]{right:-4px;top:22px;bottom:22px;width:8px;cursor:ew-resize}
+.calc-resize[data-dir="w"]{left:-4px;top:22px;bottom:22px;width:8px;cursor:ew-resize}
+.calc-resize[data-dir="ne"]{top:-4px;right:-4px;width:18px;height:18px;cursor:nesw-resize}
+.calc-resize[data-dir="nw"]{top:-4px;left:-4px;width:18px;height:18px;cursor:nwse-resize}
+.calc-resize[data-dir="se"]{bottom:-4px;right:-4px;width:18px;height:18px;cursor:nwse-resize}
+.calc-resize[data-dir="sw"]{bottom:-4px;left:-4px;width:18px;height:18px;cursor:nesw-resize}
+.calc-resize[data-dir="se"]::after{content:'';position:absolute;right:5px;bottom:5px;width:10px;height:10px;background:repeating-linear-gradient(135deg,transparent 0 2px,#a87b6d 2px 3px);opacity:.6;pointer-events:none;border-radius:0 0 4px 0}
+.calc-status{display:flex;gap:5px;align-items:center;padding:6px 8px;background:linear-gradient(180deg,#dcb3a5,#d1a99b);border-bottom:1px solid #b98a7c;font-size:9.5px;font-weight:800;color:#7a3a20;letter-spacing:.5px;position:relative;flex-wrap:wrap;flex:none}
+.calc-status .st{padding:2px 7px;border-radius:5px;background:rgba(255,255,255,.55);transition:all .15s}
+.calc-status .st.shift-active{background:#f59e0b;color:#fff}
+.calc-status .st.alpha-active{background:#dc2626;color:#fff}
+.calc-status .st.mem-active{background:#10b981;color:#fff}
+.calc-status .spacer{flex:1}
+.calc-menu-btn{padding:3px 9px;border:1.5px solid #b98a7c;background:#f5e6dc;border-radius:6px;color:#7a3a20;font-family:inherit;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;transition:all .15s}
+.calc-menu-btn:hover{background:#fbeedc}
+.calc-menu-btn.active{background:linear-gradient(135deg,#c0392b,#a83224);color:#fff;border-color:#a83224}
+.calc-menu{position:absolute;top:calc(100% + 4px);left:8px;min-width:220px;background:#fff;border:1.5px solid var(--blue-2);border-radius:12px;box-shadow:0 15px 35px -15px rgba(30,64,175,.6);z-index:200;display:none;flex-direction:column;overflow:hidden}
+.calc-menu.show{display:flex}
+.calc-menu-title{padding:8px 12px;font-size:10.5px;font-weight:800;letter-spacing:.5px;color:#64748b;text-transform:uppercase;background:linear-gradient(180deg,#f4f8ff,#eaf1ff);border-bottom:1px solid var(--line)}
+.calc-menu-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border:none;background:transparent;font-family:inherit;font-size:12.5px;font-weight:650;color:#26374b;cursor:pointer;text-align:left;transition:background .12s}
+.calc-menu-item:hover{background:#f0f6ff;color:var(--blue-deep)}
+.calc-menu-item.active{background:linear-gradient(135deg,#dbeafe,#d6e9ff);color:var(--blue-deep);font-weight:800}
+.calc-menu-item .mi-icon{font-size:14px;width:20px;text-align:center;flex:none}
+.calc-menu-item .mi-key{margin-left:auto;font-size:9.5px;font-weight:800;color:#94a3b8;padding:1px 6px;border-radius:4px;background:#f1f5f9;min-width:20px;text-align:center}
+.calc-menu-item.active .mi-key{background:#1e40af;color:#fff}
+.calc-pane{display:none;overflow-y:auto;flex:1;min-height:0}
+.calc-pane.active{display:flex;flex-direction:column}
+.calc-pane::-webkit-scrollbar{width:8px}
+.calc-pane::-webkit-scrollbar-thumb{background:#c7d9fd;border-radius:99px}
+.calc-pane[data-calc-pane="COMP"].active{display:flex}
+.calc-display{margin:10px 14px 4px;padding:8px 14px 10px;background:#a8bda1;border-radius:4px;text-align:right;min-height:74px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;box-shadow:inset 0 3px 6px rgba(0,0,0,.25),inset 0 -2px 4px rgba(255,255,255,.15);border-top:2px solid #7a5a4a;border-bottom:3px solid #7a5a4a;position:relative}
+.calc-display::before{content:'';position:absolute;inset:2px;background:repeating-linear-gradient(0deg,rgba(0,0,0,.03) 0 1px,transparent 1px 3px);pointer-events:none;border-radius:3px}
+.calc-expr{font-size:12px;color:#2d3a25;word-break:break-all;min-height:16px;font-family:"Consolas","Menlo",monospace;font-weight:700;letter-spacing:.3px}
+.calc-result{font-size:26px;font-weight:800;color:#1a2015;word-break:break-all;font-family:"Consolas","Menlo",monospace;letter-spacing:-.5px;line-height:1.1;text-shadow:0 1px 0 rgba(255,255,255,.2)}
+.calc-modes{display:flex;align-items:center;gap:4px;padding:5px 8px;background:#dcb3a5;border-bottom:1px solid #b98a7c}
+.calc-history-btn{height:24px;padding:0 9px;border:1.5px solid #b98a7c;background:#f5e6dc;border-radius:7px;color:#7a3a20;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.calc-history-btn:hover{background:#fbeedc}
+.calc-history-btn.active{background:#e7c8bc;border-color:#a87b6d}
+.calc-modes .spacer{flex:1}
+.calc-history{display:none;max-height:200px;overflow-y:auto;border-top:1px solid #c99a8b;background:#f4e3da}
+.calc-history.show{display:block}
+.calc-history-head{padding:8px 12px 6px;font-size:10.5px;font-weight:800;letter-spacing:.5px;color:#7a3a20;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+.calc-history-clear{font-size:10px;font-weight:700;border:none;background:transparent;cursor:pointer;color:#dc2626;padding:2px 6px;border-radius:6px}
+.calc-history-list{padding:0 8px 8px}
+.calc-history-item{padding:7px 9px;border-radius:8px;cursor:pointer;font-size:12px;margin-bottom:3px;display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.5)}
+.calc-history-item:hover{background:rgba(255,255,255,.85)}
+.calc-history-item .he{color:#7a5a4a;font-family:"Consolas",monospace;font-size:11px}
+.calc-history-item .hr{color:#1a2015;font-weight:700;font-family:"Consolas",monospace;text-align:right}
+.calc-history-empty{padding:16px;text-align:center;color:#7a5a4a;font-size:12px;font-style:italic}
+.fx580-keys{padding:14px 10px 16px;display:flex;flex-direction:column;gap:6px;background:#e7c8bc;border-top:1px solid #d9b3a5;border-radius:0 0 20px 20px;flex:none}
+.fx-row{display:flex;gap:5px;align-items:center}
+.fx-row.fx-row-top{padding-top:14px}
+.fx-btn{position:relative;flex:1;border:none;background:linear-gradient(180deg,#d9a999 0%,#cf9a8a 100%);color:#3a2018;font-family:inherit;font-weight:700;cursor:pointer;border-radius:50%;aspect-ratio:1;min-width:0;padding:0;display:flex;align-items:center;justify-content:center;transition:all .08s ease;box-shadow:0 2px 0 #8f5e4e,0 3px 5px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.4);user-select:none;line-height:1;text-align:center;overflow:visible}
+.fx-btn:hover{background:linear-gradient(180deg,#c99a8b 0%,#bf8a7c 100%)}
+.fx-btn:active,.fx-btn.pressed{background:linear-gradient(180deg,#b98a7c 0%,#a87b6d 100%);box-shadow:0 0 0 #8f5e4e,inset 0 2px 4px rgba(0,0,0,.25);transform:translateY(2px)}
+.fx-btn.rect{border-radius:12px;aspect-ratio:auto;min-height:44px}
+.fx-btn.accent{background:linear-gradient(180deg,#f0e5d0 0%,#e6d5b8 100%);box-shadow:0 2px 0 #b09673,0 3px 5px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.5)}
+.fx-btn.accent:hover{background:linear-gradient(180deg,#e5d8bd 0%,#dcc9a5 100%)}
+.fx-btn.accent:active{background:linear-gradient(180deg,#d4bf9a 0%,#c2ad88 100%);box-shadow:0 0 0 #b09673,inset 0 2px 4px rgba(0,0,0,.25);transform:translateY(2px)}
+.fx-btn.danger{background:linear-gradient(180deg,#f0a898 0%,#e08972 100%);box-shadow:0 2px 0 #a04a32,0 3px 5px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.4)}
+.fx-btn.danger:hover{background:linear-gradient(180deg,#ee9a88 0%,#d87f68 100%)}
+.fx-btn.danger:active{background:linear-gradient(180deg,#d58572 0%,#c07560 100%)}
+.fx-btn.eq-btn{background:linear-gradient(180deg,#2563eb 0%,#1d4ed8 100%);color:#fff;box-shadow:0 2px 0 #1e3a8a,0 3px 5px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.3)}
+.fx-btn.eq-btn:hover{background:linear-gradient(180deg,#3b82f6 0%,#2563eb 100%)}
+.fx-btn.eq-btn:active{background:linear-gradient(180deg,#1d4ed8 0%,#1e40af 100%)}
+.fx-btn .fx-main{font-size:15px;font-weight:700;line-height:1}
+.fx-btn .fx-main.small{font-size:12px}
+.fx-btn .fx-main.tiny{font-size:10.5px}
+.fx-btn .fx-sub{position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:8.5px;font-weight:800;color:#c0392b;letter-spacing:.2px;white-space:nowrap;pointer-events:none;line-height:1}
+.fx-row:first-child{padding-top:14px}
+.fx-dpad{flex:2;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;aspect-ratio:1;align-self:center;max-width:110px}
+.fx-dpad-btn{border:none;background:linear-gradient(180deg,#d9a999,#c99a8b);color:#3a2018;font-size:10px;font-weight:700;cursor:pointer;border-radius:6px;padding:0;transition:all .08s;box-shadow:0 1px 0 #8f5e4e,inset 0 1px 0 rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center}
+.fx-dpad-btn:hover{background:linear-gradient(180deg,#c99a8b,#b98a7c)}
+.fx-dpad-btn:active{background:#a87b6d;box-shadow:inset 0 2px 3px rgba(0,0,0,.3)}
+.fx-dpad-btn.up{grid-area:1/2;border-radius:10px 10px 3px 3px}
+.fx-dpad-btn.left{grid-area:2/1;border-radius:10px 3px 3px 10px}
+.fx-dpad-btn.ok{grid-area:2/2;border-radius:50%;font-size:8px;font-weight:800;background:linear-gradient(180deg,#f0d5c8,#e2c2b3)}
+.fx-dpad-btn.ok:hover{background:linear-gradient(180deg,#eac6b5,#dab0a0)}
+.fx-dpad-btn.ok:active{background:#c99a8b}
+.fx-dpad-btn.right{grid-area:2/3;border-radius:3px 10px 10px 3px}
+.fx-dpad-btn.down{grid-area:3/2;border-radius:3px 3px 10px 10px}
+.calc-sub{padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.4);overflow-y:auto;flex:1}
+.calc-sub label{display:block;font-size:10.5px;font-weight:800;color:#7a5a4a;letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px}
+.calc-sub input[type="text"],.calc-sub input[type="number"],.calc-sub select{width:100%;padding:8px 10px;font-family:inherit;font-size:13px;font-weight:600;background:#fff;color:var(--ink);border:1.5px solid #b98a7c;border-radius:8px;outline:none;transition:all .15s}
+.calc-sub input:focus,.calc-sub select:focus{border-color:#7a3a20;box-shadow:0 0 0 3px rgba(122,58,32,.15)}
+.calc-sub-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.calc-sub-row.four{grid-template-columns:repeat(4,1fr)}
+.calc-sub-row.sys2{grid-template-columns:repeat(3,1fr)}
+.calc-sub-row.sys3{grid-template-columns:repeat(4,1fr)}
+.calc-sub-row.sys4{grid-template-columns:repeat(5,1fr)}
+.calc-sub-row.sys4 label,.calc-sub-row.sys3 label{font-size:9px}
+.calc-sub-row.sys4 input,.calc-sub-row.sys3 input{padding:6px 4px;font-size:11.5px}
+.calc-run-btn{padding:10px 16px;border:none;border-radius:10px;background:linear-gradient(135deg,#7a3a20,#5c2a15);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;box-shadow:0 6px 14px -6px rgba(122,58,32,.7)}
+.calc-run-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.calc-ops{display:grid;grid-template-columns:repeat(auto-fill,minmax(75px,1fr));gap:5px}
+.calc-op-btn{padding:8px 6px;border:1.5px solid #b98a7c;background:#f5e6dc;border-radius:8px;color:#7a3a20;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s}
+.calc-op-btn:hover{background:#fbeedc;border-color:#a87b6d}
+.calc-result-box{min-height:50px;padding:10px 12px;background:#fff;border:1.5px solid #b98a7c;border-radius:10px;font-family:"Consolas","Menlo",monospace;font-size:12.5px;color:var(--ink);white-space:pre-wrap;word-break:break-word;-webkit-user-select:text;user-select:text;max-height:200px;overflow-y:auto}
+.calc-result-box:empty::before{content:'👆 Bấm nút để tính';color:#a87b6d;font-style:italic}
+.calc-result-box table{width:100%;border-collapse:collapse;font-size:12px}
+.calc-result-box table th{text-align:left;padding:4px 8px;border-bottom:1.5px solid #b98a7c;color:#7a5a4a;font-weight:800}
+.calc-result-box table th:last-child{text-align:right}
+.calc-result-box table td{padding:3px 8px}
+.calc-result-box table td:first-child{color:#7a5a4a}
+.calc-result-box table td:last-child{text-align:right;font-weight:700}
+.matrix-grid{display:inline-grid;gap:4px;padding:6px;background:#fff;border:1.5px solid #b98a7c;border-radius:10px}
+.matrix-grid input{width:46px;padding:6px 2px;text-align:center;font-family:inherit;font-size:12.5px;font-weight:600;background:#fff;color:var(--ink);border:1.5px solid #d9b3a5;border-radius:6px;outline:none}
+.matrix-grid input.focused,.vec-item input.focused,.calc-sub input.focused{outline:2px solid #7a3a20;outline-offset:-2px;background:rgba(122,58,32,.08);border-color:#7a3a20}
+.mat-blocks{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
+.mat-block{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.mat-block>.mat-label{font-size:10.5px;font-weight:800;color:#7a5a4a;letter-spacing:.4px}
+.vec-wrap{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.vec-item{display:flex;flex-direction:column}
+.vec-item label{font-size:10px}
+.vec-item input{width:58px;padding:8px 4px;text-align:center}
+.calc-size-picker{display:flex;gap:4px;padding:3px;background:#f5e6dc;border-radius:8px;width:fit-content}
+.calc-size-picker button{padding:5px 12px;border:none;background:transparent;border-radius:6px;color:#7a5a4a;font-family:inherit;font-size:11px;font-weight:800;cursor:pointer;transition:all .15s}
+.calc-size-picker button.active{background:linear-gradient(135deg,#7a3a20,#5c2a15);color:#fff}
+.table-display{min-height:48px;padding:10px 14px;background:#fff;border:1.5px solid #7a3a20;border-radius:10px;font-family:"Consolas","Menlo",monospace;font-size:18px;font-weight:700;color:var(--ink);display:flex;align-items:center;letter-spacing:.3px;word-break:break-all;box-shadow:0 0 0 3px rgba(122,58,32,.1)}
+.table-display:empty::before{content:'vd: x^2 - 2x + 1';color:#a87b6d;font-style:italic;font-weight:400;font-size:13px}
+.table-expr{flex:1;min-width:0}
+.table-cursor{color:#7a3a20;font-weight:400;animation:tableBlink 1s step-end infinite;margin-left:2px}
+@keyframes tableBlink{50%{opacity:0}}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:rgba(26,43,69,.95);color:#fff;font-size:13.5px;padding:10px 20px;border-radius:99px;opacity:0;pointer-events:none;transition:all .28s;z-index:120}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:480px){
+.calc-panel{width:calc(100vw - 20px);right:10px;top:60px;height:calc(100vh - 80px)}
+.fx-btn .fx-main{font-size:12px}
+.fx-btn .fx-main.small{font-size:10px}
+.fx-btn .fx-main.tiny{font-size:9px}
+.fx-btn .fx-sub{font-size:7px;top:-11px}
+.fx-row:first-child{padding-top:11px}
+.matrix-grid input{width:36px;font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<div class="calc-panel show" id="calcPanel">
+  <div class="calc-resize" data-dir="n"></div>
+  <div class="calc-resize" data-dir="s"></div>
+  <div class="calc-resize" data-dir="e"></div>
+  <div class="calc-resize" data-dir="w"></div>
+  <div class="calc-resize" data-dir="ne"></div>
+  <div class="calc-resize" data-dir="nw"></div>
+  <div class="calc-resize" data-dir="se"></div>
+  <div class="calc-resize" data-dir="sw"></div>
+
+  <div class="calc-head" id="calcHead">
+    <span class="calc-drag">⠿</span>
+    <span class="calc-title">🧮 Máy tính fx-580VN X</span>
+    <button class="calc-min-btn" id="calcMin">−</button>
+    <button class="calc-close" id="calcClose">✕</button>
+  </div>
+
+  <div class="calc-status">
+    <button class="calc-menu-btn" id="calcModeBtn">MODE</button>
+    <button class="calc-menu-btn" id="calcOptnBtn">OPTN</button>
+    <span class="st active" id="stMode" style="background:linear-gradient(135deg,#7a3a20,#5c2a15);color:#fff">COMP</span>
+    <span class="st active" id="stAngle">DEG</span>
+    <span class="st" id="stShift">SHIFT</span>
+    <span class="st" id="stAlpha">ALPHA</span>
+    <span class="st" id="stMem">M</span>
+    <span class="spacer"></span>
+    <span class="st" id="stHint" style="background:transparent;color:#c0392b"></span>
+
+    <div class="calc-menu" id="calcModeMenu">
+      <div class="calc-menu-title">📐 MODE — Chế độ</div>
+      <button class="calc-menu-item" data-mode="COMP"><span class="mi-icon">🧮</span>COMP<span class="mi-key">Ctrl+1</span></button>
+      <button class="calc-menu-item" data-mode="TABLE"><span class="mi-icon">📊</span>TABLE<span class="mi-key">Ctrl+2</span></button>
+      <button class="calc-menu-item" data-mode="MATRIX"><span class="mi-icon">🔢</span>MATRIX<span class="mi-key">Ctrl+3</span></button>
+      <button class="calc-menu-item" data-mode="VECTOR"><span class="mi-icon">➡️</span>VECTOR<span class="mi-key">Ctrl+4</span></button>
+      <button class="calc-menu-item" data-mode="EQN"><span class="mi-icon">🧩</span>EQN<span class="mi-key">Ctrl+5</span></button>
+    </div>
+
+    <div class="calc-menu" id="calcOptnMenu">
+      <div class="calc-menu-title">⚙️ OPTN — chèn nhanh</div>
+      <button class="calc-menu-item" data-optn="frac"><span class="mi-icon">½</span>Phân số<span class="mi-key">a/b</span></button>
+      <button class="calc-menu-item" data-optn="abs"><span class="mi-icon">|x|</span>Trị tuyệt đối<span class="mi-key">Abs</span></button>
+      <button class="calc-menu-item" data-optn="sqrt"><span class="mi-icon">√</span>Căn bậc 2<span class="mi-key">√</span></button>
+      <button class="calc-menu-item" data-optn="cbrt"><span class="mi-icon">∛</span>Căn bậc 3<span class="mi-key">∛</span></button>
+      <button class="calc-menu-item" data-optn="ncr"><span class="mi-icon">C</span>Tổ hợp<span class="mi-key">nCr</span></button>
+      <button class="calc-menu-item" data-optn="npr"><span class="mi-icon">P</span>Chỉnh hợp<span class="mi-key">nPr</span></button>
+      <button class="calc-menu-item" data-optn="gcd"><span class="mi-icon">⨁</span>ƯCLN<span class="mi-key">gcd</span></button>
+      <button class="calc-menu-item" data-optn="lcm"><span class="mi-icon">⊗</span>BCNN<span class="mi-key">lcm</span></button>
+      <button class="calc-menu-item" data-optn="rnd"><span class="mi-icon">🎲</span>Ngẫu nhiên<span class="mi-key">Rnd</span></button>
+      <button class="calc-menu-item" data-optn="deg"><span class="mi-icon">°</span>Chuyển DEG</button>
+      <button class="calc-menu-item" data-optn="rad"><span class="mi-icon">∿</span>Chuyển RAD</button>
+      <button class="calc-menu-item" data-optn="grad"><span class="mi-icon">∠</span>Chuyển GRAD</button>
+    </div>
+
+    <div class="calc-menu" id="calcSetupMenu" style="left:auto; right:8px;">
+      <div class="calc-menu-title">⚙️ SETUP — Cài đặt máy</div>
+      <button class="calc-menu-item" data-setup="angle-deg"><span class="mi-icon">°</span>Đơn vị góc: DEG<span class="mi-key" id="setAngleDeg"></span></button>
+      <button class="calc-menu-item" data-setup="angle-rad"><span class="mi-icon">∿</span>Đơn vị góc: RAD<span class="mi-key" id="setAngleRad"></span></button>
+      <button class="calc-menu-item" data-setup="angle-grad"><span class="mi-icon">∠</span>Đơn vị góc: GRAD<span class="mi-key" id="setAngleGrad"></span></button>
+      <button class="calc-menu-item" data-setup="disp-norm1"><span class="mi-icon">🔢</span>Hiển thị: Norm 1<span class="mi-key">10⁻²</span></button>
+      <button class="calc-menu-item" data-setup="disp-norm2"><span class="mi-icon">🔢</span>Hiển thị: Norm 2<span class="mi-key">10⁻⁹</span></button>
+      <button class="calc-menu-item" data-setup="disp-fix"><span class="mi-icon">📐</span>Hiển thị: Fix<span class="mi-key" id="setFixVal">3</span></button>
+      <button class="calc-menu-item" data-setup="disp-sci"><span class="mi-icon">🔬</span>Hiển thị: Sci<span class="mi-key" id="setSciVal">6</span></button>
+      <button class="calc-menu-item" data-setup="frac-mixed"><span class="mi-icon">½</span>Phân số: Hỗn số<span class="mi-key" id="setFracMixed"></span></button>
+      <button class="calc-menu-item" data-setup="frac-improper"><span class="mi-icon">a/b</span>Phân số: Thường<span class="mi-key" id="setFracImproper"></span></button>
+      <button class="calc-menu-item" data-setup="thousand-on"><span class="mi-icon">,</span>Dấu phân cách: Bật<span class="mi-key" id="setThousandOn"></span></button>
+      <button class="calc-menu-item" data-setup="thousand-off"><span class="mi-icon">∅</span>Dấu phân cách: Tắt<span class="mi-key" id="setThousandOff"></span></button>
+      <button class="calc-menu-item" data-setup="reset" style="color:#dc2626; font-weight:800"><span class="mi-icon">⚠️</span>Reset máy (xoá hết)</button>
+    </div>
+  </div>
+
+  <div class="calc-pane active" data-calc-pane="COMP">
+    <div class="calc-display"><div class="calc-expr" id="calcExpr"></div><div class="calc-result" id="calcResult">0</div></div>
+    <div class="calc-modes">
+      <button class="calc-history-btn" id="calcHistoryBtn">📜 Lịch sử</button>
+      <button class="calc-history-btn" id="calcHistPrev">▲</button>
+      <button class="calc-history-btn" id="calcHistNext">▼</button>
+      <span class="spacer"></span>
+      <button class="calc-history-btn" id="calcBackspace">⌫</button>
+    </div>
+    <div class="calc-history" id="calcHistory">
+      <div class="calc-history-head"><span>📜 Lịch sử (50 phép)</span><button class="calc-history-clear" id="calcHistoryClear">Xoá hết</button></div>
+      <div class="calc-history-list" id="calcHistoryList"></div>
+    </div>
+  </div>
+
+  <div class="calc-pane" data-calc-pane="TABLE">
+    <div class="calc-sub">
+      <div><label>f(x) — gõ bằng bàn phím bên dưới</label>
+        <div class="table-display"><span class="table-expr" id="tableExprView"></span><span class="table-cursor">▌</span></div>
+      </div>
+      <div class="calc-sub-row">
+        <div><label>Start</label><input type="text" id="tableStart" value="1"></div>
+        <div><label>End</label><input type="text" id="tableEnd" value="10"></div>
+        <div><label>Step</label><input type="text" id="tableStep" value="1"></div>
+      </div>
+      <div class="calc-ops" style="grid-template-columns:repeat(2,1fr)">
+        <button class="calc-op-btn" id="tableRun" style="grid-column:span 2">▶ Tạo bảng (=)</button>
+        <button class="calc-op-btn" data-preset="x^2 - 2x + 1">📋 x² − 2x + 1</button>
+        <button class="calc-op-btn" data-preset="sin(x)">📋 sin(x)</button>
+        <button class="calc-op-btn" data-preset="x^2 + 1">📋 x² + 1</button>
+        <button class="calc-op-btn" data-preset="2x + 3">📋 2x + 3</button>
+      </div>
+      <div class="calc-result-box" id="tableResult"></div>
+    </div>
+  </div>
+
+  <div class="calc-pane" data-calc-pane="MATRIX">
+    <div class="calc-sub">
+      <div><label>Cấp ma trận</label>
+        <div class="calc-size-picker" id="matSizePicker">
+          <button class="active" data-size="2">2 × 2</button>
+          <button data-size="3">3 × 3</button>
+        </div>
+      </div>
+      <div class="mat-blocks">
+        <div class="mat-block"><span class="mat-label">Ma trận A</span><div class="matrix-grid" id="matA"></div></div>
+        <div class="mat-block"><span class="mat-label">Ma trận B</span><div class="matrix-grid" id="matB"></div></div>
+      </div>
+      <div class="calc-ops" id="matOps">
+        <button class="calc-op-btn" data-op="A+B">A + B</button>
+        <button class="calc-op-btn" data-op="A-B">A − B</button>
+        <button class="calc-op-btn" data-op="AxB">A × B</button>
+        <button class="calc-op-btn" data-op="detA">det(A)</button>
+        <button class="calc-op-btn" data-op="detB">det(B)</button>
+        <button class="calc-op-btn" data-op="invA">A⁻¹</button>
+        <button class="calc-op-btn" data-op="invB">B⁻¹</button>
+        <button class="calc-op-btn" data-op="transA">Aᵀ</button>
+        <button class="calc-op-btn" data-op="transB">Bᵀ</button>
+      </div>
+      <div><label>🧠 Biểu thức — A, B và + − * / ^ ( ) ' ; hàm: det, inv, trans, norm</label>
+        <input type="text" id="matCustom" placeholder="vd: 2*A + 3*B  |  det(A*B)  |  A' + inv(B)">
+      </div>
+      <button class="calc-run-btn" id="matCustomRun">▶ Tính biểu thức</button>
+      <div class="calc-result-box" id="matResult"></div>
+    </div>
+  </div>
+
+  <div class="calc-pane" data-calc-pane="VECTOR">
+    <div class="calc-sub">
+      <div><label>Chiều vector</label>
+        <div class="calc-size-picker" id="vecDimPicker">
+          <button class="active" data-dim="2">2D</button>
+          <button data-dim="3">3D</button>
+        </div>
+      </div>
+      <div class="vec-wrap">
+        <div class="mat-block"><span class="mat-label">Vector A</span><div class="vec-wrap" id="vecA"></div></div>
+        <div class="mat-block"><span class="mat-label">Vector B</span><div class="vec-wrap" id="vecB"></div></div>
+      </div>
+      <div class="calc-ops" id="vecOps">
+        <button class="calc-op-btn" data-op="A+B">A + B</button>
+        <button class="calc-op-btn" data-op="A-B">A − B</button>
+        <button class="calc-op-btn" data-op="dot">A · B</button>
+        <button class="calc-op-btn" data-op="cross">A × B</button>
+        <button class="calc-op-btn" data-op="magA">|A|</button>
+        <button class="calc-op-btn" data-op="magB">|B|</button>
+        <button class="calc-op-btn" data-op="angle">Góc(A,B)</button>
+      </div>
+      <div><label>🧠 Biểu thức — A, B và + − * / ; hàm: norm, unit ; phép: · ×</label>
+        <input type="text" id="vecCustom" placeholder="vd: 2*A + 3*B  |  A·B  |  A×B">
+      </div>
+      <button class="calc-run-btn" id="vecCustomRun">▶ Tính biểu thức</button>
+      <div class="calc-result-box" id="vecResult"></div>
+    </div>
+  </div>
+
+  <div class="calc-pane" data-calc-pane="EQN">
+    <div class="calc-sub">
+      <div><label>Loại phương trình / hệ</label>
+        <select id="eqnType">
+          <option value="q2">Bậc 2: ax² + bx + c = 0</option>
+          <option value="q3">Bậc 3: ax³ + bx² + cx + d = 0</option>
+          <option value="sys2">Hệ 2 ẩn: x, y</option>
+          <option value="sys3">Hệ 3 ẩn: x, y, z</option>
+          <option value="sys4">Hệ 4 ẩn: x, y, z, w</option>
+        </select>
+      </div>
+      <div id="eqnInputs"></div>
+      <button class="calc-run-btn" id="eqnSolve">Giải</button>
+      <div class="calc-result-box" id="eqnResult"></div>
+    </div>
+  </div>
+
+  <div class="fx580-keys" id="calcButtons">
+    <div class="fx-row fx-row-top">
+      <button class="fx-btn" data-act="SHIFT"><span class="fx-sub">SHIFT</span><span class="fx-main">⇧</span></button>
+      <button class="fx-btn" data-act="ALPHA"><span class="fx-sub">ALPHA</span><span class="fx-main">A</span></button>
+      <div class="fx-dpad">
+        <button class="fx-dpad-btn up" data-dpad="up">▲</button>
+        <button class="fx-dpad-btn left" data-dpad="left">◀</button>
+        <button class="fx-dpad-btn ok" data-dpad="ok">OK</button>
+        <button class="fx-dpad-btn right" data-dpad="right">▶</button>
+        <button class="fx-dpad-btn down" data-dpad="down">▼</button>
+      </div>
+      <button class="fx-btn" data-act="MODE"><span class="fx-sub">MENU</span><span class="fx-main">≡</span></button>
+      <button class="fx-btn" id="fxSetupBtn"><span class="fx-sub">SETUP</span><span class="fx-main">⚙</span></button>
+    </div>
+    <div class="fx-row">
+      <button class="fx-btn" id="fxOptnBtn"><span class="fx-sub">OPTN</span><span class="fx-main small">⌘</span></button>
+      <button class="fx-btn" data-act="Ans"><span class="fx-main small">CALC</span></button>
+      <button class="fx-btn accent" data-act="="><span class="fx-main small">SOLVE<br>=</span></button>
+      <button class="fx-btn" data-act="VAR_X"><span class="fx-main small">x</span></button>
+    </div>
+    <div class="fx-row">
+      <button class="fx-btn" data-act="frac"><span class="fx-main small">a⁄b</span></button>
+      <button class="fx-btn" data-act="sqrt"><span class="fx-main">√</span></button>
+      <button class="fx-btn" data-act="sq"><span class="fx-main small">x²</span></button>
+      <button class="fx-btn" data-act="pow"><span class="fx-main small">xʸ</span></button>
+      <button class="fx-btn" data-act="log"><span class="fx-main small">log</span></button>
+      <button class="fx-btn" data-act="ln"><span class="fx-main small">ln</span></button>
+    </div>
+    <div class="fx-row">
+      <button class="fx-btn" data-act="±"><span class="fx-main small">(−)</span></button>
+      <button class="fx-btn" data-act=","><span class="fx-main tiny">°′″</span></button>
+      <button class="fx-btn" data-act="inv"><span class="fx-main small">x⁻¹</span></button>
+      <button class="fx-btn" data-act="sin"><span class="fx-main small">sin</span></button>
+      <button class="fx-btn" data-act="cos"><span class="fx-main small">cos</span></button>
+      <button class="fx-btn" data-act="tan"><span class="fx-main small">tan</span></button>
+    </div>
+    <div class="fx-row">
+      <button class="fx-btn" data-act="Ans"><span class="fx-main tiny">STO</span></button>
+      <button class="fx-btn" data-act="EXP"><span class="fx-main tiny">ENG</span></button>
+      <button class="fx-btn" data-act="("><span class="fx-main">(</span></button>
+      <button class="fx-btn" data-act=")"><span class="fx-main">)</span></button>
+      <button class="fx-btn" data-act="frac"><span class="fx-main tiny">S⇔D</span></button>
+      <button class="fx-btn" data-act="M+"><span class="fx-main small">M+</span></button>
+    </div>
+    <div class="fx-row">
+      <button class="fx-btn rect" data-act="7"><span class="fx-main">7</span></button>
+      <button class="fx-btn rect" data-act="8"><span class="fx-main">8</span></button>
+      <button class="fx-btn rect" data-act="9"><span class="fx-main">9</span></button>
+      <button class="fx-btn rect danger" data-act="DEL"><span class="fx-sub">CLR</span><span class="fx-main tiny">DEL</span></button>
+      <button class="fx-btn rect danger" data-act="AC"><span class="fx-sub">OFF</span><span class="fx-main tiny">AC</span></button>
+    </div>
+    <div class="fx-row">
+      <button class="fx-btn rect" data-act="4"><span class="fx-main">4</span></button>
+      <button class="fx-btn rect" data-act="5"><span class="fx-main">5</span></button>
+      <button class="fx-btn rect" data-act="6"><span class="fx-main">6</span></button>
+      <button class="fx-btn rect" data-act="×"><span class="fx-sub">nPr</span><span class="fx-main small">×</span></button>
+      <button class="fx-btn rect" data-act="÷"><span class="fx-sub">gcd</span><span class="fx-main small">÷</span></button>
+    </div>
+    <div class="fx-row">
+      <button class="fx-btn rect" data-act="1"><span class="fx-main">1</span></button>
+      <button class="fx-btn rect" data-act="2"><span class="fx-main">2</span></button>
+      <button class="fx-btn rect" data-act="3"><span class="fx-main">3</span></button>
+      <button class="fx-btn rect" data-act="+"><span class="fx-sub">lcm</span><span class="fx-main small">+</span></button>
+      <button class="fx-btn rect" data-act="−"><span class="fx-sub">mod</span><span class="fx-main small">−</span></button>
+    </div>
+    <div class="fx-row">
+      <button class="fx-btn rect" data-act="0"><span class="fx-main">0</span></button>
+      <button class="fx-btn rect" data-act="."><span class="fx-main">.</span></button>
+      <button class="fx-btn rect" data-act="EXP"><span class="fx-sub">π</span><span class="fx-main tiny">×10ˣ</span></button>
+      <button class="fx-btn rect" data-act="Ans"><span class="fx-sub">RCL</span><span class="fx-main small">Ans</span></button>
+      <button class="fx-btn rect eq-btn" data-act="="><span class="fx-main">=</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ TOAST ============ */
+const toastEl = document.getElementById('toast');
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toastEl.classList.remove('show'), 2400);
+}
+
+/* ============================================================
+   CALCULATOR
+   ============================================================ */
+const calcPanel = document.getElementById('calcPanel');
+const calcHead = document.getElementById('calcHead');
+const calcClose = document.getElementById('calcClose');
+const calcMinBtn = document.getElementById('calcMin');
+const calcExprEl = document.getElementById('calcExpr');
+const calcResultEl = document.getElementById('calcResult');
+const calcHistoryEl = document.getElementById('calcHistory');
+const calcHistoryList = document.getElementById('calcHistoryList');
+const calcHistoryClear = document.getElementById('calcHistoryClear');
+const calcButtonsEl = document.getElementById('calcButtons');
+
+const SETTINGS_KEY = 'calcSettings';
+const calcSettings = Object.assign({ angle: 'deg', disp: 'norm1', fixDigits: 3, sciDigits: 6, frac: 'improper', thousand: false }, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'));
+function saveCalcSettings() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(calcSettings)); }
+
+const C = { expr: '', ans: 0, memory: 0, vars: { A: 0, B: 0, C: 0, D: 0, X: 0, Y: 0, M: 0 }, angle: calcSettings.angle, shift: false, alpha: false, justEvaluated: false, history: [], histIdx: -1 };
+let calcMode = 'COMP';
+
+function calcFact(n) { if (n < 0 || !Number.isInteger(n) || n > 170) return NaN; let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; }
+function gcdFn(a, b) { a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b)); while (b) { [a, b] = [b, a % b]; } return a; }
+function toRad(x) { if (C.angle === 'deg') return x * Math.PI / 180; if (C.angle === 'grad') return x * Math.PI / 200; return x; }
+function fromRad(x) { if (C.angle === 'deg') return x * 180 / Math.PI; if (C.angle === 'grad') return x * 200 / Math.PI; return x; }
+function calcFormatNum(n) {
+  if (!isFinite(n)) return 'Math ERROR';
+  const d = calcSettings;
+  let s;
+  if (d.disp === 'fix' && Number.isFinite(n)) s = n.toFixed(d.fixDigits);
+  else if (d.disp === 'sci' && n !== 0 && Number.isFinite(n)) s = n.toExponential(d.sciDigits);
+  else {
+    if (Number.isInteger(n) && Math.abs(n) < 1e15) s = n.toString();
+    else { s = n.toPrecision(12); if (s.indexOf('e') === -1) s = s.replace(/\.?0+$/, ''); }
+  }
+  if (d.thousand && !s.includes('e') && !s.includes('E')) {
+    const parts = s.split('.');
+    if (parts[0].length > 4) parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    s = parts.join('.');
+  }
+  return s;
+}
+function calcEval(expr) {
+  let e = expr;
+  e = e.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+  e = e.replace(/π/g, '(PI)');
+  e = e.replace(/\bAns\b/g, '(' + C.ans + ')');
+  e = e.replace(/\bX\b/g, '(' + C.vars.X + ')').replace(/\bY\b/g, '(' + C.vars.Y + ')');
+  e = e.replace(/\bM\b/g, '(' + C.vars.M + ')');
+  e = e.replace(/\bA\b/g, '(' + C.vars.A + ')').replace(/\bB\b/g, '(' + C.vars.B + ')').replace(/\bC\b/g, '(' + C.vars.C + ')').replace(/\bD\b/g, '(' + C.vars.D + ')');
+  try { e = e.replace(/(?<![a-zA-Z_])e(?![a-zA-Z_0-9])/g, '(E)'); } catch (_) {}
+  e = e.replace(/(\d+(?:\.\d+)?)!/g, 'fact($1)');
+  e = e.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
+  e = e.replace(/∛/g, 'cbrt').replace(/√/g, 'sqrt').replace(/\^/g, '**');
+  const scope = {
+    sin: x => Math.sin(toRad(x)), cos: x => Math.cos(toRad(x)), tan: x => Math.tan(toRad(x)),
+    asin: x => fromRad(Math.asin(x)), acos: x => fromRad(Math.acos(x)), atan: x => fromRad(Math.atan(x)),
+    sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
+    log: Math.log10, ln: Math.log, sqrt: Math.sqrt, cbrt: Math.cbrt, abs: Math.abs,
+    fact: calcFact,
+    nPr: (n, r) => calcFact(n) / calcFact(n - r),
+    nCr: (n, r) => calcFact(n) / (calcFact(r) * calcFact(n - r)),
+    gcd: gcdFn, lcm: (a, b) => Math.abs(Math.round(a) * Math.round(b)) / gcdFn(a, b),
+    mod: (a, b) => a % b, Rnd: () => Math.random(),
+    RndInt: (a, b) => Math.floor(Math.random() * (b - a + 1)) + a,
+    PI: Math.PI, E: Math.E,
+  };
+  const fn = new Function(...Object.keys(scope), 'return (' + e + ');');
+  return fn(...Object.values(scope));
+}
+function calcEvalSafe(expr) { if (!expr) return null; try { const r = calcEval(expr); return (typeof r === 'number' && isFinite(r)) ? r : null; } catch { return null; } }
+function calcUpdateDisplay() {
+  if (!calcExprEl || !calcResultEl) return;
+  calcExprEl.textContent = C.expr || '';
+  if (!C.expr) calcResultEl.textContent = '0';
+  else { const r = calcEvalSafe(C.expr); calcResultEl.textContent = (r === null) ? '' : calcFormatNum(r); }
+  const stAngle = document.getElementById('stAngle');
+  if (stAngle) {
+    stAngle.textContent = C.angle.toUpperCase();
+    document.getElementById('stShift').classList.toggle('shift-active', C.shift);
+    document.getElementById('stAlpha').classList.toggle('alpha-active', C.alpha);
+    document.getElementById('stMem').classList.toggle('mem-active', C.memory !== 0);
+    document.getElementById('stHint').textContent = C.shift ? '⇧ SHIFT' : (C.alpha ? '🔤 ALPHA' : '');
+  }
+}
+function calcRenderHistory() {
+  if (!calcHistoryList) return;
+  if (C.history.length === 0) { calcHistoryList.innerHTML = '<div class="calc-history-empty">Chưa có phép tính nào</div>'; return; }
+  calcHistoryList.innerHTML = '';
+  C.history.forEach(h => {
+    const div = document.createElement('div');
+    div.className = 'calc-history-item';
+    div.innerHTML = `<div class="he">${h.expr} =</div><div class="hr">${calcFormatNum(h.result)}</div>`;
+    div.addEventListener('click', () => { C.expr = calcFormatNum(h.result); C.justEvaluated = false; C.histIdx = -1; calcUpdateDisplay(); });
+    calcHistoryList.appendChild(div);
+  });
+}
+function calcMinimize() {
+  calcPanel.classList.remove('show');
+  try { window.parent.postMessage({ type: 'calc-minimized' }, '*'); } catch(_) {}
+}
+function calcClosePanel() {
+  calcPanel.classList.remove('show');
+  try { window.parent.postMessage({ type: 'calc-closed' }, '*'); } catch(_) {}
+}
+function calcOpen() {
+  calcPanel.classList.add('show');
+  try { window.parent.postMessage({ type: 'calc-opened' }, '*'); } catch(_) {}
+}
+calcClose.addEventListener('click', calcClosePanel);
+calcMinBtn?.addEventListener('click', calcMinimize);
+function calcHistPrev() {
+  if (C.history.length === 0) return;
+  if (C.histIdx === -1) C.histIdx = 0;
+  else C.histIdx = Math.min(C.history.length - 1, C.histIdx + 1);
+  const entry = C.history[C.histIdx];
+  if (entry) { C.expr = calcFormatNum(entry.result); C.justEvaluated = false; calcUpdateDisplay(); }
+}
+function calcHistNext() {
+  if (C.history.length === 0 || C.histIdx === -1) return;
+  C.histIdx = Math.max(-1, C.histIdx - 1);
+  if (C.histIdx === -1) C.expr = '';
+  else { const entry = C.history[C.histIdx]; if (entry) C.expr = calcFormatNum(entry.result); }
+  C.justEvaluated = false; calcUpdateDisplay();
+}
+
+/* RESIZE */
+const CALC_SIZE_KEY = 'calcSize';
+const MIN_W = 340, MIN_H = 440;
+let resizeState = null;
+document.querySelectorAll('.calc-resize').forEach(h => {
+  h.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const rect = calcPanel.getBoundingClientRect();
+    calcPanel.style.right = 'auto'; calcPanel.style.bottom = 'auto';
+    calcPanel.style.left = rect.left + 'px'; calcPanel.style.top = rect.top + 'px';
+    calcPanel.style.width = rect.width + 'px'; calcPanel.style.height = rect.height + 'px';
+    resizeState = { dir: h.dataset.dir, startX: e.clientX, startY: e.clientY, startLeft: rect.left, startTop: rect.top, startW: rect.width, startH: rect.height };
+    calcPanel.classList.add('resizing');
+    try { h.setPointerCapture(e.pointerId); } catch {}
+  });
+});
+document.addEventListener('pointermove', (e) => {
+  if (!resizeState) return;
+  const s = resizeState, dx = e.clientX - s.startX, dy = e.clientY - s.startY, dir = s.dir;
+  let L = s.startLeft, T = s.startTop, W = s.startW, H = s.startH;
+  if (dir.includes('e')) W = Math.max(MIN_W, s.startW + dx);
+  if (dir.includes('w')) { W = Math.max(MIN_W, s.startW - dx); L = s.startLeft + (s.startW - W); }
+  if (dir.includes('s')) H = Math.max(MIN_H, s.startH + dy);
+  if (dir.includes('n')) { H = Math.max(MIN_H, s.startH - dy); T = s.startTop + (s.startH - H); }
+  calcPanel.style.left = L + 'px'; calcPanel.style.top = T + 'px';
+  calcPanel.style.width = W + 'px'; calcPanel.style.height = H + 'px';
+});
+document.addEventListener('pointerup', () => {
+  if (!resizeState) return;
+  resizeState = null;
+  calcPanel.classList.remove('resizing');
+  const rect = calcPanel.getBoundingClientRect();
+  localStorage.setItem(CALC_SIZE_KEY, JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width), height: Math.round(rect.height) }));
+});
+function loadCalcSize() {
+  try {
+    const s = JSON.parse(localStorage.getItem(CALC_SIZE_KEY) || 'null');
+    if (s && s.width >= MIN_W && s.height >= MIN_H) {
+      calcPanel.style.right = 'auto'; calcPanel.style.bottom = 'auto';
+      calcPanel.style.left = Math.max(4, Math.min(s.left, window.innerWidth - 100)) + 'px';
+      calcPanel.style.top = Math.max(4, Math.min(s.top, window.innerHeight - 60)) + 'px';
+      calcPanel.style.width = s.width + 'px';
+      calcPanel.style.height = s.height + 'px';
+    }
+  } catch {}
+}
+loadCalcSize();
+
+/* DRAG */
+let calcDragging = false, calcDragOffX = 0, calcDragOffY = 0;
+calcHead.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('.calc-close') || e.target.closest('.calc-min-btn')) return;
+  if (e.button !== 0 && e.pointerType === 'mouse') return;
+  const rect = calcPanel.getBoundingClientRect();
+  calcDragging = true;
+  calcDragOffX = e.clientX - rect.left; calcDragOffY = e.clientY - rect.top;
+  calcPanel.style.right = 'auto'; calcPanel.style.bottom = 'auto';
+  calcPanel.style.left = rect.left + 'px'; calcPanel.style.top = rect.top + 'px';
+  calcPanel.style.width = rect.width + 'px'; calcPanel.style.height = rect.height + 'px';
+  calcPanel.classList.add('dragging');
+  calcHead.classList.add('dragging');
+  try { calcHead.setPointerCapture(e.pointerId); } catch {}
+  e.preventDefault();
+});
+calcHead.addEventListener('pointermove', (e) => {
+  if (!calcDragging) return;
+  const rect = calcPanel.getBoundingClientRect();
+  let x = e.clientX - calcDragOffX, y = e.clientY - calcDragOffY;
+  x = Math.max(4, Math.min(x, window.innerWidth - rect.width - 4));
+  y = Math.max(4, Math.min(y, window.innerHeight - rect.height - 4));
+  calcPanel.style.left = x + 'px';
+  calcPanel.style.top = y + 'px';
+});
+function calcEndDrag(e) {
+  if (!calcDragging) return;
+  calcDragging = false;
+  calcPanel.classList.remove('dragging');
+  calcHead.classList.remove('dragging');
+  try { calcHead.releasePointerCapture(e.pointerId); } catch {}
+  const rect = calcPanel.getBoundingClientRect();
+  localStorage.setItem(CALC_SIZE_KEY, JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width), height: Math.round(rect.height) }));
+}
+calcHead.addEventListener('pointerup', calcEndDrag);
+calcHead.addEventListener('pointercancel', calcEndDrag);
+
+/* MODE / OPTN / SETUP */
+const calcModeBtn = document.getElementById('calcModeBtn');
+const calcOptnBtn = document.getElementById('calcOptnBtn');
+const calcModeMenu = document.getElementById('calcModeMenu');
+const calcOptnMenu = document.getElementById('calcOptnMenu');
+const calcSetupMenu = document.getElementById('calcSetupMenu');
+const stMode = document.getElementById('stMode');
+function closeCalcMenus() {
+  calcModeMenu.classList.remove('show');
+  calcOptnMenu.classList.remove('show');
+  calcSetupMenu.classList.remove('show');
+  calcModeBtn.classList.remove('active');
+  calcOptnBtn.classList.remove('active');
+}
+function setCalcMode(mode) {
+  calcMode = mode;
+  document.querySelectorAll('.calc-pane').forEach(p => p.classList.toggle('active', p.dataset.calcPane === calcMode));
+  if (stMode) stMode.textContent = calcMode;
+  closeCalcMenus();
+  if (calcMode === 'COMP') calcUpdateDisplay();
+  setTimeout(() => {
+    if (calcMode === 'MATRIX') { const f = document.querySelector('#matA input'); if (f) setFocusedInput(f); }
+    else if (calcMode === 'VECTOR') { const f = document.querySelector('#vecA input'); if (f) setFocusedInput(f); }
+    else if (calcMode === 'EQN') { const f = document.querySelector('#eqnInputs input'); if (f) setFocusedInput(f); }
+    else if (calcMode === 'TABLE') { updateTableDisplay(); }
+  }, 40);
+}
+calcModeBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const wasOpen = calcModeMenu.classList.contains('show');
+  closeCalcMenus();
+  if (!wasOpen) {
+    calcModeMenu.querySelectorAll('.calc-menu-item').forEach(it => it.classList.toggle('active', it.dataset.mode === calcMode));
+    calcModeMenu.classList.add('show');
+    calcModeBtn.classList.add('active');
+  }
+});
+calcOptnBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const wasOpen = calcOptnMenu.classList.contains('show');
+  closeCalcMenus();
+  if (!wasOpen) { calcOptnMenu.classList.add('show'); calcOptnBtn.classList.add('active'); }
+});
+calcModeMenu.addEventListener('click', (e) => {
+  const item = e.target.closest('.calc-menu-item');
+  if (!item) return;
+  setCalcMode(item.dataset.mode);
+  toast('📐 ' + item.dataset.mode);
+});
+calcOptnMenu.addEventListener('click', (e) => {
+  const item = e.target.closest('.calc-menu-item');
+  if (!item) return;
+  const optn = item.dataset.optn;
+  const map = { frac:'1/(', abs:'abs(', sqrt:'√(', cbrt:'∛(', ncr:'nCr(', npr:'nPr(', gcd:'gcd(', lcm:'lcm(', rnd:'Rnd()' };
+  if (calcMode === 'TABLE') {
+    if (map[optn]) { tableExpr += map[optn]; updateTableDisplay(); }
+    else if (optn === 'deg') { C.angle = 'deg'; calcSettings.angle = 'deg'; saveCalcSettings(); calcUpdateDisplay(); }
+    else if (optn === 'rad') { C.angle = 'rad'; calcSettings.angle = 'rad'; saveCalcSettings(); calcUpdateDisplay(); }
+    else if (optn === 'grad') { C.angle = 'grad'; calcSettings.angle = 'grad'; saveCalcSettings(); calcUpdateDisplay(); }
+    closeCalcMenus();
+    return;
+  }
+  if (calcMode === 'MATRIX' || calcMode === 'VECTOR' || calcMode === 'EQN') {
+    if (map[optn]) cellAppend(map[optn]);
+    else if (optn === 'deg') { C.angle = 'deg'; calcSettings.angle = 'deg'; saveCalcSettings(); calcUpdateDisplay(); }
+    else if (optn === 'rad') { C.angle = 'rad'; calcSettings.angle = 'rad'; saveCalcSettings(); calcUpdateDisplay(); }
+    else if (optn === 'grad') { C.angle = 'grad'; calcSettings.angle = 'grad'; saveCalcSettings(); calcUpdateDisplay(); }
+    closeCalcMenus();
+    return;
+  }
+  if (calcMode !== 'COMP') setCalcMode('COMP');
+  switch (optn) {
+    case 'frac': C.expr += '1/('; break;
+    case 'abs': C.expr += 'abs('; break;
+    case 'sqrt': C.expr += '√('; break;
+    case 'cbrt': C.expr += '∛('; break;
+    case 'ncr': C.expr += 'nCr('; break;
+    case 'npr': C.expr += 'nPr('; break;
+    case 'gcd': C.expr += 'gcd('; break;
+    case 'lcm': C.expr += 'lcm('; break;
+    case 'rnd': C.expr += 'Rnd()'; break;
+    case 'deg': C.angle = 'deg'; calcSettings.angle = 'deg'; saveCalcSettings(); break;
+    case 'rad': C.angle = 'rad'; calcSettings.angle = 'rad'; saveCalcSettings(); break;
+    case 'grad': C.angle = 'grad'; calcSettings.angle = 'grad'; saveCalcSettings(); break;
+  }
+  calcUpdateDisplay();
+  closeCalcMenus();
+});
+document.addEventListener('click', (e) => { if (!e.target.closest('.calc-status') && !e.target.closest('.calc-menu')) closeCalcMenus(); });
+
+function updateSetupUI() {
+  document.getElementById('setAngleDeg').textContent = calcSettings.angle === 'deg' ? '✓' : '';
+  document.getElementById('setAngleRad').textContent = calcSettings.angle === 'rad' ? '✓' : '';
+  document.getElementById('setAngleGrad').textContent = calcSettings.angle === 'grad' ? '✓' : '';
+  document.getElementById('setFracMixed').textContent = calcSettings.frac === 'mixed' ? '✓' : '';
+  document.getElementById('setFracImproper').textContent = calcSettings.frac === 'improper' ? '✓' : '';
+  document.getElementById('setThousandOn').textContent = calcSettings.thousand ? '✓' : '';
+  document.getElementById('setThousandOff').textContent = !calcSettings.thousand ? '✓' : '';
+  document.getElementById('setFixVal').textContent = calcSettings.fixDigits;
+  document.getElementById('setSciVal').textContent = calcSettings.sciDigits;
+  calcSetupMenu.querySelectorAll('.calc-menu-item').forEach(it => {
+    if (it.dataset.setup && it.dataset.setup.startsWith('disp-')) it.classList.toggle('active', it.dataset.setup === 'disp-' + calcSettings.disp);
+  });
+  C.angle = calcSettings.angle;
+}
+function openSetupMenu() { closeCalcMenus(); updateSetupUI(); calcSetupMenu.classList.add('show'); }
+calcSetupMenu.addEventListener('click', (e) => {
+  const item = e.target.closest('.calc-menu-item');
+  if (!item) return;
+  const s = item.dataset.setup;
+  switch (s) {
+    case 'angle-deg': calcSettings.angle = 'deg'; toast('📐 DEG'); break;
+    case 'angle-rad': calcSettings.angle = 'rad'; toast('📐 RAD'); break;
+    case 'angle-grad': calcSettings.angle = 'grad'; toast('📐 GRAD'); break;
+    case 'disp-norm1': calcSettings.disp = 'norm1'; toast('🔢 Norm 1'); break;
+    case 'disp-norm2': calcSettings.disp = 'norm2'; toast('🔢 Norm 2'); break;
+    case 'disp-fix': { const v = prompt('Số chữ số thập phân (0-9):', calcSettings.fixDigits); if (v === null) return; calcSettings.fixDigits = Math.max(0, Math.min(9, parseInt(v) || 3)); calcSettings.disp = 'fix'; toast('📐 Fix ' + calcSettings.fixDigits); break; }
+    case 'disp-sci': { const v = prompt('Số chữ số khoa học (0-9):', calcSettings.sciDigits); if (v === null) return; calcSettings.sciDigits = Math.max(0, Math.min(9, parseInt(v) || 6)); calcSettings.disp = 'sci'; toast('🔬 Sci ' + calcSettings.sciDigits); break; }
+    case 'frac-mixed': calcSettings.frac = 'mixed'; toast('½ Hỗn số'); break;
+    case 'frac-improper': calcSettings.frac = 'improper'; toast('a/b Thường'); break;
+    case 'thousand-on': calcSettings.thousand = true; toast(', Bật phân cách'); break;
+    case 'thousand-off': calcSettings.thousand = false; toast('∅ Tắt phân cách'); break;
+    case 'reset': {
+      if (!confirm('Reset máy? Xoá hết cài đặt + bộ nhớ + lịch sử.')) return;
+      C.memory = 0; C.history = []; C.histIdx = -1; C.ans = 0; C.expr = '';
+      Object.assign(calcSettings, { angle: 'deg', disp: 'norm1', fixDigits: 3, sciDigits: 6, frac: 'improper', thousand: false });
+      saveCalcSettings(); updateSetupUI(); calcUpdateDisplay(); calcRenderHistory();
+      toast('🧹 Đã reset máy');
+      break;
+    }
+  }
+  saveCalcSettings(); updateSetupUI(); calcUpdateDisplay(); closeCalcMenus();
+});
+updateSetupUI();
+document.getElementById('fxSetupBtn')?.addEventListener('click', () => openSetupMenu());
+document.getElementById('fxOptnBtn')?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const wasOpen = calcOptnMenu.classList.contains('show');
+  closeCalcMenus();
+  if (!wasOpen) { calcOptnMenu.classList.add('show'); calcOptnBtn.classList.add('active'); }
+});
+
+/* FOCUS TRACKING */
+let focusedInput = null;
+let cellFreshFocus = false;
+function setFocusedInput(inp) {
+  if (focusedInput === inp && inp) return;
+  if (focusedInput) focusedInput.classList.remove('focused');
+  focusedInput = inp;
+  if (inp) { inp.classList.add('focused'); cellFreshFocus = true; }
+  else cellFreshFocus = false;
+}
+function cellAppend(str) {
+  if (!focusedInput) { toast('👆 Bấm vào ô nhập để chọn'); return; }
+  if (cellFreshFocus) { focusedInput.value = str; cellFreshFocus = false; }
+  else focusedInput.value += str;
+}
+function cellDelete() { if (!focusedInput) return; focusedInput.value = focusedInput.value.slice(0, -1); cellFreshFocus = false; }
+function cellClear() { if (!focusedInput) return; focusedInput.value = ''; cellFreshFocus = false; }
+document.addEventListener('focusin', (e) => {
+  const inp = e.target;
+  if (inp.tagName === 'INPUT' && inp.closest('.calc-pane') && inp.closest('#calcPanel')) setFocusedInput(inp);
+});
+
+/* TABLE */
+let tableExpr = '';
+function updateTableDisplay() {
+  const view = document.getElementById('tableExprView');
+  if (view) view.textContent = tableExpr || '';
+}
+function setTableExpr(s) { tableExpr = s; updateTableDisplay(); }
+document.querySelectorAll('.calc-op-btn[data-preset]').forEach(b => {
+  b.addEventListener('click', () => { setTableExpr(b.dataset.preset); toast('📋 Đã nạp: ' + b.dataset.preset); });
+});
+
+const SHIFT_MAP = {
+  'sin': 'asin(', 'cos': 'acos(', 'tan': 'atan(',
+  'log': '10^(', 'ln': 'e^(',
+  'sq': '^3', 'pow': '^(1/', 'sqrt': 'cbrt(', 'inv': 'abs(', 'fact': 'nCr(',
+  'pi': 'Rnd(', 'e': 'RndInt(', '(': 'sinh(', ')': 'cosh(', ',': 'tanh(',
+  '×': 'nPr(', '÷': 'gcd(', '+': 'lcm(', '−': 'mod(',
+  '.': '%', 'EXP': 'π', 'Ans': 'M',
+  'DEL': 'CLR', 'AC': 'OFF', 'M+': 'MC', 'M−': 'MR',
+};
+const ALPHA_MAP = { 'sin': 'A', 'cos': 'B', 'tan': 'C', 'log': 'D', 'ln': 'X', 'sq': 'Y', 'pow': 'M' };
+
+function handleTableInput(act) {
+  if (C.shift && SHIFT_MAP[act] !== undefined && SHIFT_MAP[act] !== null) {
+    if (act === 'DEL') { tableExpr = ''; updateTableDisplay(); C.shift = false; return; }
+    if (act === 'AC') { calcClosePanel(); C.shift = false; return; }
+    tableExpr += SHIFT_MAP[act]; C.shift = false; updateTableDisplay(); return;
+  }
+  C.shift = false;
+  const insMap = {
+    '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9',
+    '.':'.', '+':'+','−':'-','×':'*','÷':'/','^':'^',
+    '(':'(', ')':')', ',':',', '%':'%',
+    'sin':'sin(', 'cos':'cos(', 'tan':'tan(', 'log':'log(', 'ln':'ln(',
+    'sq':'^2', 'pow':'^', 'sqrt':'√(', 'inv':'1/(', 'fact':'!',
+    'pi':'π', 'e':'e', 'EXP':'×10^(', 'Ans':'Ans',
+  };
+  if (act === 'DEL' || act === '⌫') { tableExpr = tableExpr.slice(0, -1); updateTableDisplay(); return; }
+  if (act === 'AC') { tableExpr = ''; updateTableDisplay(); toast('🧹 Đã xoá f(x)'); return; }
+  if (act === '=') { document.getElementById('tableRun').click(); return; }
+  if (act === 'M+') { const v = calcEvalSafe(tableExpr); C.memory += (v !== null) ? v : C.ans; toast('💾 M+ = ' + calcFormatNum(C.memory)); return; }
+  if (act === 'M−') { const v = calcEvalSafe(tableExpr); C.memory -= (v !== null) ? v : C.ans; toast('💾 M− = ' + calcFormatNum(C.memory)); return; }
+  if (insMap[act] !== undefined) { tableExpr += insMap[act]; updateTableDisplay(); return; }
+}
+function handleCellInput(act) {
+  if (!focusedInput) { toast('👆 Bấm vào ô nhập để chọn'); return; }
+  if (C.shift && SHIFT_MAP[act] !== undefined && SHIFT_MAP[act] !== null) {
+    if (act === 'DEL') { cellClear(); C.shift = false; return; }
+    if (act === 'AC') { calcClosePanel(); C.shift = false; return; }
+    cellAppend(SHIFT_MAP[act]); C.shift = false; return;
+  }
+  C.shift = false;
+  if (act === 'DEL' || act === '⌫') { cellDelete(); return; }
+  if (act === 'AC') { cellClear(); return; }
+  if (act === '=') { focusedInput.blur(); return; }
+  const map = {
+    '0':'0','1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7','8':'8','9':'9',
+    '.':'.', '−':'-','+':'+','×':'*','÷':'/','^':'^',
+    '(':'(', ')':')', ',':',', '%':'%',
+    'sin':'sin(', 'cos':'cos(', 'tan':'tan(', 'log':'log(', 'ln':'ln(',
+    'sq':'^2', 'pow':'^', 'sqrt':'√(', 'inv':'1/(', 'fact':'!',
+    'pi':'π', 'e':'e', 'EXP':'×10^(', 'Ans':'Ans',
+  };
+  if (map[act] !== undefined) { cellAppend(map[act]); return; }
+}
+
+let calcApplyAction = function (act) {
+  if (act === 'SHIFT') { C.shift = !C.shift; C.alpha = false; calcUpdateDisplay(); return; }
+  if (act === 'ALPHA') { C.alpha = !C.alpha; C.shift = false; calcUpdateDisplay(); return; }
+  if (act === 'MODE') {
+    if (C.shift) { C.shift = false; calcUpdateDisplay(); openSetupMenu(); return; }
+    const wasOpen = calcModeMenu.classList.contains('show');
+    closeCalcMenus();
+    if (!wasOpen) {
+      calcModeMenu.querySelectorAll('.calc-menu-item').forEach(it => it.classList.toggle('active', it.dataset.mode === calcMode));
+      calcModeMenu.classList.add('show');
+      calcModeBtn.classList.add('active');
+    }
+    return;
+  }
+  if (typeof act === 'string' && act.startsWith('VAR_')) {
+    const v = act.slice(4);
+    if (calcMode === 'COMP') { C.expr += v; C.justEvaluated = false; calcUpdateDisplay(); return; }
+    if (calcMode === 'TABLE') { tableExpr += v; updateTableDisplay(); return; }
+    cellAppend(v);
+    return;
+  }
+  if (act === '±') {
+    if (calcMode === 'COMP') {
+      const m = C.expr.match(/(-?\d+(?:\.\d+)?)$/);
+      if (m) {
+        const idx = C.expr.length - m[1].length;
+        const before = C.expr.slice(0, idx), num = m[1];
+        if (num.startsWith('-')) C.expr = before + num.slice(1);
+        else C.expr = before + '(-' + num + ')';
+        calcUpdateDisplay();
+      } else { C.expr += '(-'; calcUpdateDisplay(); }
+    } else if (calcMode === 'TABLE') { tableExpr += '(-'; updateTableDisplay(); }
+    else { cellAppend('(-'); }
+    return;
+  }
+  if (act === 'frac') {
+    if (calcMode === 'COMP') { C.expr += '1/('; calcUpdateDisplay(); return; }
+    if (calcMode === 'TABLE') { tableExpr += '1/('; updateTableDisplay(); return; }
+    cellAppend('1/(');
+    return;
+  }
+  if (calcMode === 'TABLE') { handleTableInput(act); return; }
+  if (calcMode === 'MATRIX' || calcMode === 'VECTOR' || calcMode === 'EQN') { handleCellInput(act); return; }
+  const wasShift = C.shift, wasAlpha = C.alpha;
+  if (wasShift && SHIFT_MAP[act] !== undefined && SHIFT_MAP[act] !== null) {
+    const ins = SHIFT_MAP[act];
+    if (act === 'DEL') { C.expr = ''; C.ans = 0; C.memory = 0; C.history = []; C.histIdx = -1; calcRenderHistory(); calcUpdateDisplay(); toast('🧹 Đã xoá hết'); C.shift = false; return; }
+    if (act === 'AC') { calcClosePanel(); C.shift = false; return; }
+    if (act === 'M+') { C.memory = 0; C.shift = false; calcUpdateDisplay(); toast('💾 M = 0'); return; }
+    if (act === 'M−' || act === 'Ans') { C.expr += 'M'; C.shift = false; calcUpdateDisplay(); return; }
+    C.expr += ins; C.shift = false; C.justEvaluated = false; calcUpdateDisplay(); return;
+  }
+  if (wasAlpha && ALPHA_MAP[act]) { C.expr += ALPHA_MAP[act]; C.alpha = false; C.justEvaluated = false; calcUpdateDisplay(); return; }
+  C.shift = false; C.alpha = false;
+  if (act === 'AC') { C.expr = ''; calcUpdateDisplay(); return; }
+  if (act === 'DEL' || act === '⌫') { C.expr = C.expr.slice(0, -1); calcUpdateDisplay(); return; }
+  if (act === 'M+') { const v = calcEvalSafe(C.expr); C.memory += (v !== null) ? v : C.ans; toast('💾 M+ = ' + calcFormatNum(C.memory)); calcUpdateDisplay(); return; }
+  if (act === 'M−') { const v = calcEvalSafe(C.expr); C.memory -= (v !== null) ? v : C.ans; toast('💾 M− = ' + calcFormatNum(C.memory)); calcUpdateDisplay(); return; }
+  if (act === '=') {
+    if (!C.expr) return;
+    const r = calcEvalSafe(C.expr);
+    if (r === null) { toast('⚠️ Math ERROR'); return; }
+    C.history.unshift({ expr: C.expr, result: r });
+    if (C.history.length > 50) C.history.pop();
+    C.ans = r; C.histIdx = -1;
+    const prevExpr = C.expr;
+    C.expr = calcFormatNum(r);
+    calcExprEl.textContent = prevExpr + ' =';
+    calcResultEl.textContent = calcFormatNum(r);
+    C.justEvaluated = true;
+    calcRenderHistory();
+    document.getElementById('stMem').classList.toggle('mem-active', C.memory !== 0);
+    return;
+  }
+  if (C.justEvaluated) { const keep = ['+', '−', '×', '÷', '^', '%', 'Ans', 'M', ')']; if (!keep.includes(act)) C.expr = ''; C.justEvaluated = false; }
+  const PLAIN = {
+    'sin': 'sin(', 'cos': 'cos(', 'tan': 'tan(', 'log': 'log(', 'ln': 'ln(',
+    'sq': '^2', 'pow': '^', 'sqrt': '√(', 'inv': '1/(', 'fact': '!',
+    'pi': 'π', 'e': 'e', '(': '(', ')': ')', ',': ',',
+    '7': '7', '8': '8', '9': '9', '4': '4', '5': '5', '6': '6',
+    '1': '1', '2': '2', '3': '3', '0': '0', '.': '.',
+    'EXP': '×10^(', 'Ans': 'Ans',
+    '×': '×', '÷': '÷', '+': '+', '−': '−', '%': '%',
+  };
+  if (PLAIN[act] !== undefined) { C.expr += PLAIN[act]; calcUpdateDisplay(); return; }
+};
+
+if (calcButtonsEl) {
+  calcButtonsEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.fx-btn');
+    if (!btn) return;
+    const act = btn.dataset.act;
+    if (!act) return;
+    btn.classList.add('pressed');
+    setTimeout(() => btn.classList.remove('pressed'), 120);
+    calcApplyAction(act);
+  });
+}
+document.querySelectorAll('.fx-dpad-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    const dir = b.dataset.dpad;
+    if (calcMode === 'COMP') {
+      if (dir === 'up') { calcHistPrev(); toast('▲ Lịch sử lên'); }
+      else if (dir === 'down') { calcHistNext(); toast('▼ Lịch sử xuống'); }
+      else if (dir === 'ok') { calcApplyAction('='); }
+    } else if (calcMode === 'MATRIX' || calcMode === 'VECTOR' || calcMode === 'EQN') {
+      const pane = document.querySelector(`.calc-pane[data-calc-pane="${calcMode}"]`);
+      const inputs = Array.from(pane.querySelectorAll('input'));
+      if (!inputs.length) return;
+      let idx = inputs.indexOf(focusedInput);
+      if (idx < 0) idx = 0;
+      let next = idx;
+      if (dir === 'right' || dir === 'down') next = Math.min(inputs.length - 1, idx + 1);
+      else if (dir === 'left' || dir === 'up') next = Math.max(0, idx - 1);
+      else if (dir === 'ok') { focusedInput?.blur(); return; }
+      inputs[next].focus();
+      setFocusedInput(inputs[next]);
+    } else if (calcMode === 'TABLE') {
+      if (dir === 'ok') document.getElementById('tableRun').click();
+    }
+  });
+});
+
+document.getElementById('calcHistoryBtn')?.addEventListener('click', () => {
+  const showing = calcHistoryEl.classList.toggle('show');
+  document.getElementById('calcHistoryBtn').classList.toggle('active', showing);
+  if (showing) calcRenderHistory();
+});
+document.getElementById('calcHistPrev')?.addEventListener('click', calcHistPrev);
+document.getElementById('calcHistNext')?.addEventListener('click', calcHistNext);
+document.getElementById('calcBackspace')?.addEventListener('click', () => calcApplyAction('DEL'));
+calcHistoryClear?.addEventListener('click', () => { C.history = []; C.histIdx = -1; calcRenderHistory(); });
+
+document.addEventListener('keydown', (e) => {
+  if (!calcPanel.classList.contains('show')) return;
+  if (e.target.tagName === 'SELECT') return;
+  const inInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'm' || e.key === 'M')) { e.preventDefault(); calcMinimize(); return; }
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && ['1','2','3','4','5'].includes(e.key)) {
+    e.preventDefault();
+    const modes = ['COMP', 'TABLE', 'MATRIX', 'VECTOR', 'EQN'];
+    setCalcMode(modes[+e.key - 1]);
+    toast('📐 ' + modes[+e.key - 1]);
+    return;
+  }
+  if (e.key === 'F1') { e.preventDefault(); calcModeBtn.click(); return; }
+  if (e.key === 'F2') { e.preventDefault(); calcOptnBtn.click(); return; }
+  if (e.key === 'Escape') { calcClosePanel(); e.preventDefault(); return; }
+  if (inInput) return;
+  const k = e.key;
+  if (k === 'Enter' || k === '=') { calcApplyAction('='); e.preventDefault(); return; }
+  if (k === 'Backspace') { calcApplyAction('DEL'); e.preventDefault(); return; }
+  if (k === 'Delete') { calcApplyAction('AC'); e.preventDefault(); return; }
+  if (calcMode === 'COMP') {
+    if (/^[0-9]$/.test(k)) { calcApplyAction(k); e.preventDefault(); return; }
+    if (k === '.') { calcApplyAction('.'); e.preventDefault(); return; }
+    if (k === '+') { calcApplyAction('+'); e.preventDefault(); return; }
+    if (k === '-') { calcApplyAction('−'); e.preventDefault(); return; }
+    if (k === '*') { calcApplyAction('×'); e.preventDefault(); return; }
+    if (k === '/') { calcApplyAction('÷'); e.preventDefault(); return; }
+    if (k === '^') { calcApplyAction('^'); e.preventDefault(); return; }
+    if (k === '(' || k === ')') { calcApplyAction(k); e.preventDefault(); return; }
+    if (k === ',') { calcApplyAction(','); e.preventDefault(); return; }
+    if (k === '%') { calcApplyAction('%'); e.preventDefault(); return; }
+    if (k === '!') { calcApplyAction('fact'); e.preventDefault(); return; }
+    if (k === 'ArrowUp') { calcHistPrev(); e.preventDefault(); return; }
+    if (k === 'ArrowDown') { calcHistNext(); e.preventDefault(); return; }
+  }
+});
+calcRenderHistory();
+calcUpdateDisplay();
+
+/* TABLE run */
+function evalExprAtX(expr, x) {
+  if (!expr) return NaN;
+  const saved = C.vars.X;
+  C.vars.X = x;
+  try { return calcEval(expr); }
+  catch { return NaN; }
+  finally { C.vars.X = saved; }
+}
+document.getElementById('tableRun').addEventListener('click', () => {
+  const fx = tableExpr.trim();
+  const start = parseFloat(document.getElementById('tableStart').value);
+  const end = parseFloat(document.getElementById('tableEnd').value);
+  const step = parseFloat(document.getElementById('tableStep').value);
+  const out = document.getElementById('tableResult');
+  if (!fx) { out.textContent = '⚠️ Chưa nhập f(x) — gõ bằng bàn phím hoặc chọn mẫu'; toast('⚠️ Chưa nhập f(x)'); return; }
+  if (isNaN(start) || isNaN(end) || isNaN(step) || step === 0) { out.textContent = '⚠️ Start/End/Step không hợp lệ'; return; }
+  const total = Math.floor((end - start) / step + 1e-9) + 1;
+  if (total > 300 || total < 1) { out.textContent = '⚠️ Số dòng không hợp lệ (max 300)'; return; }
+  let html = '<table><thead><tr><th>x</th><th>f(x)</th></tr></thead><tbody>';
+  let ok = 0;
+  for (let i = 0; i < total; i++) {
+    const x = start + i * step;
+    const r = evalExprAtX(fx, x);
+    const rs = (typeof r === 'number' && isFinite(r)) ? calcFormatNum(r) : '—';
+    if (typeof r === 'number' && isFinite(r)) ok++;
+    html += `<tr><td>${calcFormatNum(Math.round(x * 1e10) / 1e10)}</td><td>${rs}</td></tr>`;
+  }
+  out.innerHTML = html + '</tbody></table>';
+  if (ok === 0) toast('⚠️ Không tính được — kiểm tra lại f(x)');
+  else toast('✅ Đã tạo bảng ' + total + ' dòng');
+});
+
+/* MATRIX */
+let matSize = 2;
+function buildMatrixGrid(id, size) {
+  const grid = document.getElementById(id);
+  if (!grid) return;
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+  for (let i = 0; i < size; i++) for (let j = 0; j < size; j++) {
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.inputMode = 'decimal';
+    inp.dataset.i = i; inp.dataset.j = j;
+    inp.value = (i === j ? '1' : '0');
+    grid.appendChild(inp);
+  }
+}
+function readMatrix(id, size) {
+  const grid = document.getElementById(id);
+  const M = Array.from({length: size}, () => new Array(size).fill(0));
+  grid.querySelectorAll('input').forEach(inp => { M[+inp.dataset.i][+inp.dataset.j] = parseFloat(inp.value) || 0; });
+  return M;
+}
+function matToStr(M) { return M.map(row => row.map(v => calcFormatNum(v)).join('   ')).join('\n'); }
+function matAdd(A, B) { return A.map((row, i) => row.map((v, j) => v + B[i][j])); }
+function matSub(A, B) { return A.map((row, i) => row.map((v, j) => v - B[i][j])); }
+function matMul(A, B) { const n = A.length, m = B[0].length, p = B.length; const R = Array.from({length: n}, () => new Array(m).fill(0)); for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) for (let k = 0; k < p; k++) R[i][j] += A[i][k] * B[k][j]; return R; }
+function matDet(A) {
+  const n = A.length;
+  if (n === 1) return A[0][0];
+  if (n === 2) return A[0][0]*A[1][1] - A[0][1]*A[1][0];
+  const M = A.map(r => [...r]);
+  let det = 1;
+  for (let i = 0; i < n; i++) {
+    let p = i;
+    for (let k = i+1; k < n; k++) if (Math.abs(M[k][i]) > Math.abs(M[p][i])) p = k;
+    if (p !== i) { [M[i], M[p]] = [M[p], M[i]]; det = -det; }
+    if (Math.abs(M[i][i]) < 1e-12) return 0;
+    det *= M[i][i];
+    for (let k = i+1; k < n; k++) { const f = M[k][i] / M[i][i]; for (let j = i; j < n; j++) M[k][j] -= f * M[i][j]; }
+  }
+  return det;
+}
+function matInv(A) {
+  const n = A.length;
+  const M = A.map((row, i) => [...row, ...Array.from({length: n}, (_, j) => i === j ? 1 : 0)]);
+  for (let i = 0; i < n; i++) {
+    let p = i;
+    for (let k = i+1; k < n; k++) if (Math.abs(M[k][i]) > Math.abs(M[p][i])) p = k;
+    [M[i], M[p]] = [M[p], M[i]];
+    if (Math.abs(M[i][i]) < 1e-12) return null;
+    const piv = M[i][i];
+    for (let j = 0; j < 2*n; j++) M[i][j] /= piv;
+    for (let k = 0; k < n; k++) { if (k === i) continue; const f = M[k][i]; for (let j = 0; j < 2*n; j++) M[k][j] -= f * M[i][j]; }
+  }
+  return M.map(row => row.slice(n));
+}
+function matTrans(A) { return A[0].map((_, j) => A.map(r => r[j])); }
+document.getElementById('matSizePicker').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  matSize = +b.dataset.size;
+  document.querySelectorAll('#matSizePicker button').forEach(x => x.classList.toggle('active', x === b));
+  buildMatrixGrid('matA', matSize);
+  buildMatrixGrid('matB', matSize);
+});
+buildMatrixGrid('matA', 2);
+buildMatrixGrid('matB', 2);
+document.getElementById('matOps').addEventListener('click', (e) => {
+  const btn = e.target.closest('.calc-op-btn');
+  if (!btn) return;
+  const op = btn.dataset.op;
+  const A = readMatrix('matA', matSize), B = readMatrix('matB', matSize);
+  const out = document.getElementById('matResult');
+  let res = '';
+  try {
+    switch (op) {
+      case 'A+B': res = 'A + B =\n' + matToStr(matAdd(A, B)); break;
+      case 'A-B': res = 'A − B =\n' + matToStr(matSub(A, B)); break;
+      case 'AxB': res = 'A × B =\n' + matToStr(matMul(A, B)); break;
+      case 'detA': res = 'det(A) = ' + calcFormatNum(matDet(A)); break;
+      case 'detB': res = 'det(B) = ' + calcFormatNum(matDet(B)); break;
+      case 'invA': { const inv = matInv(A); res = inv ? 'A⁻¹ =\n' + matToStr(inv) : '⚠️ A không khả nghịch'; break; }
+      case 'invB': { const inv = matInv(B); res = inv ? 'B⁻¹ =\n' + matToStr(inv) : '⚠️ B không khả nghịch'; break; }
+      case 'transA': res = 'Aᵀ =\n' + matToStr(matTrans(A)); break;
+      case 'transB': res = 'Bᵀ =\n' + matToStr(matTrans(B)); break;
+    }
+    out.textContent = res;
+  } catch (err) { out.textContent = '⚠️ ' + err.message; }
+});
+
+/* VECTOR */
+let vecDim = 2;
+const VEC_LABELS = ['x', 'y', 'z'];
+function buildVecInput(id, dim) {
+  const wrap = document.getElementById(id);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  for (let i = 0; i < dim; i++) {
+    const div = document.createElement('div');
+    div.className = 'vec-item';
+    div.innerHTML = `<label>${VEC_LABELS[i]}</label><input type="text" inputMode="decimal" data-idx="${i}" value="0">`;
+    wrap.appendChild(div);
+  }
+}
+function readVec(id, dim) {
+  const wrap = document.getElementById(id);
+  const v = new Array(dim).fill(0);
+  wrap.querySelectorAll('input').forEach(inp => { v[+inp.dataset.idx] = parseFloat(inp.value) || 0; });
+  return v;
+}
+document.getElementById('vecDimPicker').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  vecDim = +b.dataset.dim;
+  document.querySelectorAll('#vecDimPicker button').forEach(x => x.classList.toggle('active', x === b));
+  buildVecInput('vecA', vecDim);
+  buildVecInput('vecB', vecDim);
+});
+buildVecInput('vecA', 2);
+buildVecInput('vecB', 2);
+document.getElementById('vecOps').addEventListener('click', (e) => {
+  const btn = e.target.closest('.calc-op-btn');
+  if (!btn) return;
+  const op = btn.dataset.op;
+  const A = readVec('vecA', vecDim), B = readVec('vecB', vecDim);
+  const out = document.getElementById('vecResult');
+  const fmtVec = v => '(' + v.map(x => calcFormatNum(x)).join(', ') + ')';
+  let res = '';
+  switch (op) {
+    case 'A+B': res = 'A + B = ' + fmtVec(A.map((x, i) => x + B[i])); break;
+    case 'A-B': res = 'A − B = ' + fmtVec(A.map((x, i) => x - B[i])); break;
+    case 'dot': res = 'A · B = ' + calcFormatNum(A.reduce((s, x, i) => s + x * B[i], 0)); break;
+    case 'cross': {
+      if (vecDim !== 3) { res = '⚠️ Tích có hướng cần 3D'; break; }
+      res = 'A × B = ' + fmtVec([A[1]*B[2] - A[2]*B[1], A[2]*B[0] - A[0]*B[2], A[0]*B[1] - A[1]*B[0]]);
+      break;
+    }
+    case 'magA': res = '|A| = ' + calcFormatNum(Math.hypot(...A)); break;
+    case 'magB': res = '|B| = ' + calcFormatNum(Math.hypot(...B)); break;
+    case 'angle': {
+      const d = A.reduce((s, x, i) => s + x * B[i], 0);
+      const mA = Math.hypot(...A), mB = Math.hypot(...B);
+      if (mA === 0 || mB === 0) { res = '⚠️ Vector 0'; break; }
+      res = 'Góc(A,B) = ' + calcFormatNum(Math.acos(Math.max(-1, Math.min(1, d / (mA * mB)))) * 180 / Math.PI) + '°';
+      break;
+    }
+  }
+  out.textContent = res;
+});
+
+/* MATH PARSER cho MATRIX/VECTOR */
+function _isNum(v) { return typeof v === 'number'; }
+function _isVec(v) { return Array.isArray(v) && v.length > 0 && typeof v[0] === 'number'; }
+function _isMat(v) { return Array.isArray(v) && v.length > 0 && Array.isArray(v[0]); }
+function _identityMat(n) { return Array.from({length: n}, (_, i) => Array.from({length: n}, (_, j) => i === j ? 1 : 0)); }
+function _crossVec(a, b) { if (a.length !== 3 || b.length !== 3) throw new Error('Tích có hướng cần 3D'); return [a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]]; }
+function _addAny(a, b) {
+  if (_isNum(a) && _isNum(b)) return a + b;
+  if (_isMat(a) && _isMat(b)) { if (a.length !== b.length) throw new Error('Cấp ma trận không khớp'); return a.map((row, i) => row.map((v, j) => v + b[i][j])); }
+  if (_isVec(a) && _isVec(b)) { if (a.length !== b.length) throw new Error('Chiều vector không khớp'); return a.map((v, i) => v + b[i]); }
+  throw new Error('Không cộng được');
+}
+function _subAny(a, b) {
+  if (_isNum(a) && _isNum(b)) return a - b;
+  if (_isMat(a) && _isMat(b)) return a.map((row, i) => row.map((v, j) => v - b[i][j]));
+  if (_isVec(a) && _isVec(b)) return a.map((v, i) => v - b[i]);
+  throw new Error('Không trừ được');
+}
+function _mulAny(a, b) {
+  if (_isNum(a) && _isNum(b)) return a * b;
+  if (_isNum(a) && _isMat(b)) return b.map(row => row.map(x => x * a));
+  if (_isMat(a) && _isNum(b)) return a.map(row => row.map(x => x * b));
+  if (_isNum(a) && _isVec(b)) return b.map(x => x * a);
+  if (_isVec(a) && _isNum(b)) return a.map(x => x * b);
+  if (_isMat(a) && _isMat(b)) return matMul(a, b);
+  if (_isVec(a) && _isVec(b)) throw new Error('Vector × Vector — dùng · hoặc ×');
+  throw new Error('Không nhân được');
+}
+function _tokenizeMath(s) {
+  const tokens = []; let i = 0;
+  while (i < s.length) {
+    const ch = s[i];
+    if (/\s/.test(ch)) { i++; continue; }
+    if (/[0-9.]/.test(ch)) {
+      let j = i;
+      while (j < s.length && /[0-9.]/.test(s[j])) j++;
+      const num = parseFloat(s.slice(i, j));
+      if (isNaN(num)) throw new Error('Số không hợp lệ');
+      tokens.push({ t: 'num', v: num });
+      i = j; continue;
+    }
+    if (/[A-Za-z_]/.test(ch)) {
+      let j = i;
+      while (j < s.length && /[A-Za-z0-9_]/.test(s[j])) j++;
+      tokens.push({ t: 'id', v: s.slice(i, j) });
+      i = j; continue;
+    }
+    if ('+-*/^()\''.includes(ch) || ch === '·' || ch === '×') { tokens.push({ t: 'op', v: ch }); i++; continue; }
+    throw new Error('Ký tự không hợp lệ: ' + ch);
+  }
+  return tokens;
+}
+function _parseMath(tokens) {
+  let pos = 0;
+  const peek = () => tokens[pos];
+  const next = () => tokens[pos++];
+  function parseExpr() { let left = parseTerm(); while (peek() && peek().t === 'op' && (peek().v === '+' || peek().v === '-')) { const op = next().v; const right = parseTerm(); left = { t: 'binop', op, left, right }; } return left; }
+  function parseTerm() { let left = parsePostfix(); while (peek() && peek().t === 'op' && ['*', '/', '·', '×'].includes(peek().v)) { const op = next().v; const right = parsePostfix(); left = { t: 'binop', op, left, right }; } return left; }
+  function parsePostfix() {
+    let node = parseUnary();
+    while (peek() && peek().t === 'op' && (peek().v === '\'' || peek().v === '^')) {
+      const op = next().v;
+      if (op === '\'') node = { t: 'trans', arg: node };
+      else node = { t: 'pow', base: node, exp: parseUnary() };
+    }
+    return node;
+  }
+  function parseUnary() {
+    if (peek() && peek().t === 'op' && peek().v === '-') { next(); return { t: 'neg', arg: parseUnary() }; }
+    if (peek() && peek().t === 'op' && peek().v === '+') { next(); return parseUnary(); }
+    return parsePrimary();
+  }
+  function parsePrimary() {
+    const tok = next();
+    if (!tok) throw new Error('Biểu thức trống');
+    if (tok.t === 'num') return { t: 'num', v: tok.v };
+    if (tok.t === 'id') {
+      if (peek() && peek().t === 'op' && peek().v === '(') {
+        next();
+        const arg = parseExpr();
+        const close = next();
+        if (!close || close.v !== ')') throw new Error('Thiếu dấu )');
+        return { t: 'func', name: tok.v.toLowerCase(), arg };
+      }
+      return { t: 'var', name: tok.v };
+    }
+    if (tok.t === 'op' && tok.v === '(') {
+      const inner = parseExpr();
+      const close = next();
+      if (!close || close.v !== ')') throw new Error('Thiếu dấu )');
+      return inner;
+    }
+    throw new Error('Token không mong đợi');
+  }
+  const ast = parseExpr();
+  if (pos < tokens.length) throw new Error('Còn token thừa');
+  return ast;
+}
+function _evalMathNode(node, vars) {
+  switch (node.t) {
+    case 'num': return node.v;
+    case 'var': { const name = node.name.toUpperCase(); if (!(name in vars)) throw new Error('Không có biến: ' + node.name); return vars[name]; }
+    case 'neg': {
+      const v = _evalMathNode(node.arg, vars);
+      if (_isNum(v)) return -v;
+      if (_isMat(v)) return v.map(row => row.map(x => -x));
+      if (_isVec(v)) return v.map(x => -x);
+      throw new Error('Không đổi dấu được');
+    }
+    case 'trans': { const v = _evalMathNode(node.arg, vars); if (!_isMat(v)) throw new Error("Transpose (') chỉ cho ma trận"); return matTrans(v); }
+    case 'pow': {
+      const base = _evalMathNode(node.base, vars), exp = _evalMathNode(node.exp, vars);
+      if (_isNum(base) && _isNum(exp)) return Math.pow(base, exp);
+      if (_isMat(base) && _isNum(exp)) {
+        if (exp === -1) { const r = matInv(base); if (!r) throw new Error('Không khả nghịch'); return r; }
+        if (exp === 0) return _identityMat(base.length);
+        if (Number.isInteger(exp) && exp > 0) { let r = _identityMat(base.length); for (let i = 0; i < exp; i++) r = matMul(r, base); return r; }
+      }
+      throw new Error('Luỹ thừa không hợp lệ');
+    }
+    case 'func': {
+      const arg = _evalMathNode(node.arg, vars);
+      const name = node.name;
+      if (name === 'det') { if (!_isMat(arg)) throw new Error('det() cần ma trận'); return matDet(arg); }
+      if (name === 'inv') { if (!_isMat(arg)) throw new Error('inv() cần ma trận'); const r = matInv(arg); if (!r) throw new Error('Không khả nghịch'); return r; }
+      if (name === 'tr' || name === 'trans' || name === 'transpose') { if (!_isMat(arg)) throw new Error('trans() cần ma trận'); return matTrans(arg); }
+      if (name === 'norm' || name === 'mag' || name === 'abs') {
+        if (_isMat(arg)) { let s = 0; for (const row of arg) for (const x of row) s += x * x; return Math.sqrt(s); }
+        if (_isVec(arg)) return Math.hypot(...arg);
+        if (_isNum(arg)) return Math.abs(arg);
+        throw new Error('norm() hỗ trợ ma trận/vector/số');
+      }
+      if (name === 'unit') { if (!_isVec(arg)) throw new Error('unit() cần vector'); const m = Math.hypot(...arg); if (m === 0) throw new Error('Vector 0'); return arg.map(x => x / m); }
+      throw new Error('Hàm không hỗ trợ: ' + name);
+    }
+    case 'binop': {
+      const L = _evalMathNode(node.left, vars), R = _evalMathNode(node.right, vars);
+      const op = node.op;
+      if (op === '+') return _addAny(L, R);
+      if (op === '-') return _subAny(L, R);
+      if (op === '*') return _mulAny(L, R);
+      if (op === '/') {
+        if (!_isNum(R)) throw new Error('Chia chỉ hỗ trợ mẫu là số');
+        if (R === 0) throw new Error('Chia cho 0');
+        if (_isNum(L)) return L / R;
+        if (_isMat(L)) return L.map(row => row.map(x => x / R));
+        if (_isVec(L)) return L.map(x => x / R);
+      }
+      if (op === '·') { if (_isVec(L) && _isVec(R)) { if (L.length !== R.length) throw new Error('Chiều không khớp'); return L.reduce((s, x, i) => s + x * R[i], 0); } throw new Error('· chỉ cho vector'); }
+      if (op === '×') { if (_isVec(L) && _isVec(R)) return _crossVec(L, R); if (_isMat(L) && _isMat(R)) return matMul(L, R); throw new Error('× cần hai vector/ma trận'); }
+      throw new Error('Toán tử không hỗ trợ: ' + op);
+    }
+  }
+  throw new Error('Node không hợp lệ');
+}
+function evalMatrixExpr(expr, vars) { if (!expr.trim()) throw new Error('Chưa nhập biểu thức'); return _evalMathNode(_parseMath(_tokenizeMath(expr)), vars); }
+function evalVectorExpr(expr, vars) { if (!expr.trim()) throw new Error('Chưa nhập biểu thức'); return _evalMathNode(_parseMath(_tokenizeMath(expr)), vars); }
+function formatMathResult(v) {
+  if (_isNum(v)) return calcFormatNum(v);
+  if (_isMat(v)) { const w = Math.max(...v.flat().map(x => calcFormatNum(x).length)); return v.map(row => '  ' + row.map(x => calcFormatNum(x).padStart(w, ' ')).join('   ') + '  ').join('\n'); }
+  if (_isVec(v)) return '(' + v.map(x => calcFormatNum(x)).join(', ') + ')';
+  return String(v);
+}
+document.getElementById('matCustomRun')?.addEventListener('click', () => {
+  const out = document.getElementById('matResult');
+  const expr = document.getElementById('matCustom').value;
+  try {
+    const A = readMatrix('matA', matSize), B = readMatrix('matB', matSize);
+    out.textContent = expr + ' =\n' + formatMathResult(evalMatrixExpr(expr, { A, B }));
+  } catch (err) { out.textContent = '⚠️ ' + err.message; }
+});
+document.getElementById('vecCustomRun')?.addEventListener('click', () => {
+  const out = document.getElementById('vecResult');
+  const expr = document.getElementById('vecCustom').value;
+  try {
+    const A = readVec('vecA', vecDim), B = readVec('vecB', vecDim);
+    out.textContent = expr + ' =\n' + formatMathResult(evalVectorExpr(expr, { A, B }));
+  } catch (err) { out.textContent = '⚠️ ' + err.message; }
+});
+
+/* EQN */
+function buildEqnInputs() {
+  const type = document.getElementById('eqnType').value;
+  const wrap = document.getElementById('eqnInputs');
+  wrap.innerHTML = '';
+  if (type === 'q2') wrap.innerHTML = `<div class="calc-sub-row"><div><label>a</label><input type="text" data-k="a" value="1"></div><div><label>b</label><input type="text" data-k="b" value="0"></div><div><label>c</label><input type="text" data-k="c" value="0"></div></div>`;
+  else if (type === 'q3') wrap.innerHTML = `<div class="calc-sub-row four"><div><label>a</label><input type="text" data-k="a" value="1"></div><div><label>b</label><input type="text" data-k="b" value="0"></div><div><label>c</label><input type="text" data-k="c" value="0"></div><div><label>d</label><input type="text" data-k="d" value="0"></div></div>`;
+  else {
+    const n = type === 'sys2' ? 2 : type === 'sys3' ? 3 : 4;
+    const vars = ['x', 'y', 'z', 'w'].slice(0, n);
+    let html = '';
+    for (let i = 0; i < n; i++) {
+      html += `<div class="calc-sub-row sys${n}">`;
+      for (let j = 0; j < n; j++) html += `<div><label>a${i+1}${vars[j]}</label><input type="text" data-i="${i}" data-j="${j}" value="${i === j ? '1' : '0'}"></div>`;
+      html += `<div><label>= c${i+1}</label><input type="text" data-c="${i}" value="0"></div></div>`;
+    }
+    wrap.innerHTML = html;
+  }
+}
+document.getElementById('eqnType').addEventListener('change', () => { buildEqnInputs(); setTimeout(() => { const f = document.querySelector('#eqnInputs input'); if (f) setFocusedInput(f); }, 30); });
+buildEqnInputs();
+function solveQuadStr(a, b, c) {
+  if (a === 0) { if (b === 0) return c === 0 ? 'Vô số nghiệm' : 'Vô nghiệm'; return 'PT bậc 1: x = ' + calcFormatNum(-c/b); }
+  const d = b*b - 4*a*c;
+  if (d > 0) { const r = Math.sqrt(d); return `Δ = ${calcFormatNum(d)} > 0\nx₁ = ${calcFormatNum((-b+r)/(2*a))}\nx₂ = ${calcFormatNum((-b-r)/(2*a))}`; }
+  if (d === 0) return `Δ = 0 — nghiệm kép\nx₁ = x₂ = ${calcFormatNum(-b/(2*a))}`;
+  const re = -b/(2*a), im = Math.sqrt(-d)/(2*a);
+  return `Δ = ${calcFormatNum(d)} < 0 — 2 nghiệm phức\nx₁ = ${calcFormatNum(re)} + ${calcFormatNum(im)}i\nx₂ = ${calcFormatNum(re)} − ${calcFormatNum(im)}i`;
+}
+function solveCubicStr(a, b, c, d) {
+  if (a === 0) return solveQuadStr(b, c, d);
+  b /= a; c /= a; d /= a;
+  const p = c - b*b/3, q = 2*b*b*b/27 - b*c/3 + d;
+  const disc = q*q/4 + p*p*p/27, shift = -b/3;
+  const roots = [];
+  if (disc > 1e-12) { const u = Math.cbrt(-q/2 + Math.sqrt(disc)), v = Math.cbrt(-q/2 - Math.sqrt(disc)); roots.push(u + v + shift); }
+  else if (disc > -1e-12) { const u = Math.cbrt(-q/2); roots.push(2*u + shift, -u + shift); }
+  else {
+    const r = Math.sqrt(-p*p*p/27), phi = Math.acos(Math.max(-1, Math.min(1, -q/(2*r)))), t = 2*Math.sqrt(-p/3);
+    roots.push(t*Math.cos(phi/3) + shift, t*Math.cos((phi + 2*Math.PI)/3) + shift, t*Math.cos((phi + 4*Math.PI)/3) + shift);
+  }
+  return roots.map((x, i) => `x${i+1} = ${calcFormatNum(Math.round(x * 1e10) / 1e10)}`).join('\n');
+}
+function solveLinearSystem(A, B, n) {
+  const M = A.map((row, i) => [...row, B[i]]);
+  for (let i = 0; i < n; i++) {
+    let p = i;
+    for (let k = i+1; k < n; k++) if (Math.abs(M[k][i]) > Math.abs(M[p][i])) p = k;
+    [M[i], M[p]] = [M[p], M[i]];
+    if (Math.abs(M[i][i]) < 1e-10) return null;
+    for (let k = i+1; k < n; k++) { const f = M[k][i] / M[i][i]; for (let j = i; j <= n; j++) M[k][j] -= f * M[i][j]; }
+  }
+  const x = new Array(n);
+  for (let i = n-1; i >= 0; i--) { let s = M[i][n]; for (let j = i+1; j < n; j++) s -= M[i][j] * x[j]; x[i] = s / M[i][i]; }
+  return x;
+}
+document.getElementById('eqnSolve').addEventListener('click', () => {
+  const type = document.getElementById('eqnType').value;
+  const wrap = document.getElementById('eqnInputs');
+  const out = document.getElementById('eqnResult');
+  const valOf = k => parseFloat(wrap.querySelector(`input[data-k="${k}"]`)?.value) || 0;
+  if (type === 'q2') out.textContent = solveQuadStr(valOf('a'), valOf('b'), valOf('c'));
+  else if (type === 'q3') out.textContent = solveCubicStr(valOf('a'), valOf('b'), valOf('c'), valOf('d'));
+  else {
+    const n = type === 'sys2' ? 2 : type === 'sys3' ? 3 : 4;
+    const A = Array.from({length: n}, () => new Array(n).fill(0)), B = new Array(n).fill(0);
+    wrap.querySelectorAll('input').forEach(inp => {
+      if (inp.dataset.i !== undefined) A[+inp.dataset.i][+inp.dataset.j] = parseFloat(inp.value) || 0;
+      else if (inp.dataset.c !== undefined) B[+inp.dataset.c] = parseFloat(inp.value) || 0;
+    });
+    const x = solveLinearSystem(A, B, n);
+    if (!x) { out.textContent = '⚠️ Hệ vô nghiệm hoặc vô số nghiệm'; return; }
+    const vars = ['x', 'y', 'z', 'w'].slice(0, n);
+    out.textContent = x.map((v, i) => vars[i] + ' = ' + calcFormatNum(Math.round(v * 1e12) / 1e12)).join('\n');
+  }
+});
+
+/* ============================================================
+   MESSAGE — parent <-> iframe
+   ============================================================ */
+window.addEventListener('message', (e) => {
+  if (!e.data || typeof e.data !== 'object') return;
+  if (e.data.type === 'calc-open') {
+    calcOpen();
+  } else if (e.data.type === 'calc-minimize') {
+    calcMinimize();
+  } else if (e.data.type === 'calc-close') {
+    calcClosePanel();
+  } else if (e.data.type === 'calc-toggle') {
+    if (calcPanel.classList.contains('show')) calcMinimize();
+    else calcOpen();
+  }
+});
+
+/* Khi iframe vừa được show → báo parent biết trạng thái hiện tại */
+window.parent.postMessage({ type: 'calc-opened' }, '*');
+</script>
+</body>
+</html>
