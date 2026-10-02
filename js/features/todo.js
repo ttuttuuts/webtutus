@@ -150,6 +150,7 @@
         <div class="td-toolbar">
           <button class="td-add-btn" id="tdAddBtn">＋ Thêm công việc</button>
           <div class="td-filter" id="tdFilter">
+            <div class="td-filter-pill" id="tdFilterPill"></div>
             <button class="td-filter-btn active" data-filter="all">Tất cả</button>
             <button class="td-filter-btn" data-filter="active">Chưa xong</button>
             <button class="td-filter-btn" data-filter="done">Đã xong</button>
@@ -210,6 +211,29 @@
     const statsEl = mount.querySelector('#tdStats');
     const searchEl = mount.querySelector('#tdSearch');
     const filterEl = mount.querySelector('#tdFilter');
+    const pillEl = mount.querySelector('#tdFilterPill');
+
+    /* ---------- PILL TRƯỢT ---------- */
+    function placeFilterPill(animate) {
+      const activeBtn = filterEl.querySelector('.td-filter-btn.active');
+      if (!pillEl || !activeBtn) return;
+      const filterRect = filterEl.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      const left = btnRect.left - filterRect.left + filterEl.scrollLeft;
+      const width = btnRect.width;
+
+      if (!animate) {
+        const prev = pillEl.style.transition;
+        pillEl.style.transition = 'none';
+        pillEl.style.transform = `translateX(${left}px)`;
+        pillEl.style.width = width + 'px';
+        void pillEl.offsetWidth;
+        pillEl.style.transition = prev;
+      } else {
+        pillEl.style.transform = `translateX(${left}px)`;
+        pillEl.style.width = width + 'px';
+      }
+    }
 
     function refresh() {
       statsEl.innerHTML = renderStats();
@@ -234,8 +258,10 @@
     filterEl.addEventListener('click', (e) => {
       const btn = e.target.closest('.td-filter-btn');
       if (!btn) return;
+      if (btn.dataset.filter === filter) return;
       filter = btn.dataset.filter;
       filterEl.querySelectorAll('.td-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+      placeFilterPill(true);
       refresh();
     });
     searchEl.addEventListener('input', () => { search = searchEl.value.trim(); refresh(); });
@@ -297,6 +323,21 @@
     });
 
     refresh();
+
+    /* Đặt pill sau khi DOM đã ổn định */
+    requestAnimationFrame(() => placeFilterPill(false));
+
+    /* Refit khi resize */
+    if (window._tdFilterRO) window._tdFilterRO.disconnect();
+    window._tdFilterRO = new ResizeObserver(() => {
+      if (!mount.isConnected) {
+        window._tdFilterRO.disconnect();
+        window._tdFilterRO = null;
+        return;
+      }
+      placeFilterPill(false);
+    });
+    window._tdFilterRO.observe(filterEl);
 
     if (tickInterval) clearInterval(tickInterval);
     tickInterval = setInterval(() => {
