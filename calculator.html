@@ -361,16 +361,16 @@ html.embedded .popup-bar{ cursor:default !important; flex:none !important; }
 html.embedded .popup-body{
   flex:1 1 auto !important;
   min-height:0 !important;
-  overflow:hidden !important;         /* bỏ scrollbar */
+  overflow:hidden !important;
   display:flex !important;
   justify-content:center !important;
-  align-items:center !important;      /* căn giữa dọc */
+  align-items:center !important;
   padding:0 !important;
   line-height:normal !important;
 }
-/* KHÔNG force transform:none — để fitPopup() tự scale vừa khung */
+/* transform-origin top left để fitPopup scale khớp box đã set */
 html.embedded .popup-scaler{
-  transform-origin:center center !important;
+  transform-origin: top left !important;
   width:auto;
   height:auto;
 }
@@ -702,7 +702,6 @@ const vars = { A:0, B:0, C:0, D:0, E:0, F:0, X:0, Y:0, Z:0, M:0 };
 const VAR_MAP = {
   'NEG':'A','DMS':'B','XINV':'C','SIN':'E',
   'COS':'F','TAN':'X','LPAR':'X','RPAR':'Y','SD':'Z'
-  /* MPLUS không map qua đây, xử lý riêng */
 };
 let shiftActive = false, alphaActive = false, stoActive = false;
 const history = [];
@@ -980,7 +979,6 @@ function deleteAtCursor(){
   cursor--;
 }
 
-/* S ⇔ D : đổi qua lại giữa thập phân và phân số (chu kỳ nếu có) */
 function toggleSD(){
   if(!justEvaluated || !resultDecimal) return;
   if(resultDecimal.includes('×10')) return;
@@ -1006,7 +1004,6 @@ function toggleSD(){
   render();
 }
 
-/* SHIFT + S ⇔ D : đổi giữa phân số (d/c) và hỗn số (ab/c) */
 function toggleSDMixed(){
   if(!justEvaluated || !resultDecimal) return;
   if(resultDecimal.includes('×10')) return;
@@ -1115,7 +1112,6 @@ function handle(act){
     insertAtCursor('√('); render(); return;
   }
 
-  /* M+ / M− / ALPHA-M */
   if(act === 'MPLUS'){
     if(alphaActive){
       insertAtCursor('M');
@@ -1165,7 +1161,6 @@ function handle(act){
     return;
   }
 
-  /* ALPHA + phím có trong VAR_MAP (LPAR->X, RPAR->Y, SD->Z, ...) */
   if(alphaActive && VAR_MAP[act]){
     insertAtCursor(VAR_MAP[act]); alphaActive = false; updateStatusBar(); render(); return;
   }
@@ -1182,7 +1177,6 @@ function handle(act){
     insertAtCursor('×10^('); render(); return;
   }
 
-  /* S ⇔ D  /  SHIFT + S ⇔ D */
   if(act === 'SD'){
     if(shiftActive){
       toggleSDMixed();
@@ -1523,12 +1517,10 @@ if(document.fonts && document.fonts.ready){ document.fonts.ready.then(() => fitP
 
   document.documentElement.classList.add('embedded');
 
-  /* Buộc popup luôn mở và fill khung iframe */
   popupState = 'open';
   applyPopupState();
   calcPopup.classList.remove('closed', 'collapsed');
 
-  /* Nút "—" và "✕" gửi message cho trang cha */
   popMin.onclick = (e) => {
     e.stopPropagation();
     try { window.parent.postMessage({ type: 'calc-minimized' }, '*'); } catch(_){}
@@ -1538,15 +1530,12 @@ if(document.fonts && document.fonts.ready){ document.fonts.ready.then(() => fitP
     try { window.parent.postMessage({ type: 'calc-closed' }, '*'); } catch(_){}
   };
 
-  /* Thông báo cho parent */
   try { window.parent.postMessage({ type: 'calc-opened' }, '*'); } catch(_){}
 
-  /* Fit lại cho đúng kích thước iframe */
   requestAnimationFrame(fitPopup);
   setTimeout(fitPopup, 100);
   window.addEventListener('resize', fitPopup);
 
-  /* Lắng nghe theme từ parent (index.html gửi vào) */
   window.addEventListener('message', (e) => {
     if (!e.data || typeof e.data !== 'object') return;
     if (e.data.type === 'theme') {
