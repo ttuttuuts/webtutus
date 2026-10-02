@@ -1,5 +1,7 @@
 /* ============================================================
-   NOTIFY MODULE — Thông báo deadline + kì thi + hàng ngày
+   NOTIFY MODULE — Per-item notification
+   - Mỗi task/exam tự quyết định mốc bắn
+   - Global: chỉ giữ permission + daily summary
    ============================================================ */
 (function () {
   'use strict';
@@ -9,21 +11,23 @@
   const SETTINGS_KEY = 'pdfReader_notify_settings';
   const LAST_DAILY_KEY = 'pdfReader_notify_lastDaily';
   const CHECK_INTERVAL = 30 * 1000;
+  const WINDOW_MS = 3600000; // 1h — cửa sổ cho phép bắn mốc
 
   const DEFAULT_SETTINGS = {
     dailyEnabled: false,
     dailyHour: 7,
     dailyMinute: 0,
-    tasksEnabled: true,
-    examsEnabled: true,
     contentTasks: true,
     contentOverdue: true,
     contentExams: true
   };
 
+  const TASK_DEFAULT = { enabled: true, before: [1440, 60, 30] };
+  const EXAM_DEFAULT = { enabled: true, before: [10080, 1440, 60] };
+
+  let settings = Object.assign({}, DEFAULT_SETTINGS);
   let checkTimer = null;
   let swRegistration = null;
-  let settings = Object.assign({}, DEFAULT_SETTINGS);
 
   /* ---------- STORAGE ---------- */
   function readJSON(key, fallback) {
@@ -42,9 +46,7 @@
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (_) {}
   }
 
-  function isEnabled() {
-    return localStorage.getItem(ENABLED_KEY) === '1';
-  }
+  function isEnabled() { return localStorage.getItem(ENABLED_KEY) === '1'; }
   function setEnabled(v) {
     try { localStorage.setItem(ENABLED_KEY, v ? '1' : '0'); } catch (_) {}
     if (v) startChecking(); else stopChecking();
@@ -56,20 +58,14 @@
     try {
       const now = Date.now();
       const clean = {};
-      for (const k in o) if (now - o[k] < 7 * 86400000) clean[k] = o[k];
+      for (const k in o) if (now - o[k] < 30 * 86400000) clean[k] = o[k];
       localStorage.setItem(SENT_KEY, JSON.stringify(clean));
     } catch (_) {}
   }
-  function wasSent(key) { return !!getSent()[key]; }
-  function markSent(key) {
-    const o = getSent();
-    o[key] = Date.now();
-    saveSent(o);
-  }
+  function wasSent(k) { return !!getSent()[k]; }
+  function markSent(k) { const o = getSent(); o[k] = Date.now(); saveSent(o); }
 
-  function toast(msg) {
-    if (window.App && window.App.toast) window.App.toast(msg);
-  }
+  function toast(msg) { if (window.App && window.App.toast) window.App.toast(msg); }
 
   /* ---------- PERMISSION ---------- */
   async function ensurePermission() {
@@ -95,96 +91,114 @@
     }, opts || {});
 
     try {
-      if (swRegistration) {
-        await swRegistration.showNotification(title, options);
-      } else {
+      if (swRegistration) await swRegistration.showNotification(title, options);
+      else {
         const n = new Notification(title, options);
         n.onclick = () => { window.focus(); n.close(); };
       }
-    } catch (_) {
-      try { new Notification(title, options); } catch (__) {}
-    }
+    } catch (_) { try { new Notification(title, options); } catch (__) {} }
+  }
+
+  /* ---------- HELPERS ---------- */
+  function formatOffset(mins) {
+    if (mins >= 1440 && mins % 1440 === 0) return `còn ${mins / 1440} ngày`;
+    if (mins >= 60 && mins % 60 === 0) return `còn ${mins / 60} giờ`;
+    return `còn ${mins} phút`;
+  }
+
+  function normalizeTaskNotify(nf) {
+    if (!nf || typeof nf !== 'object') return Object.assign({}, TASK_DEFAULT);
+    const enabled = nf.enabled !== false;
+    let before = Array.isArray(nf.before) ? nf.before.slice() : [];
+    if (enabled && before.length === 0) before = TASK_DEFAULT.before.slice();
+    return { enabled, before };
+  }
+  function normalizeExamNotify(nf) {
+    if (!nf || typeof nf !== 'object') return Object.assign({}, EXAM_DEFAULT);
+    const enabled = nf.enabled !== false;
+    let before = Array.isArray(nf.before) ? nf.before.slice() : [];
+    if (enabled && before.length === 0) before = EXAM_DEFAULT.before.slice();
+    return { enabled, before };
   }
 
   /* ---------- CHECK TASKS ---------- */
   function checkTasks() {
-    if (!settings.tasksEnabled) return;
     const tasks = readJSON('pdfReader_todos_v1', []);
     if (!Array.isArray(tasks)) return;
     const now = Date.now();
 
     for (const t of tasks) {
       if (t.done || !t.deadline) continue;
+
+      const nf = normalizeTaskNotify(t.notify);
+      if (!nf.enabled) continue;
+
       const dl = new Date(t.deadline).getTime();
       if (isNaN(dl)) continue;
       const diff = dl - now;
 
-      const wins = [
-        { key: 'overdue_1h', cond: diff < 0 && diff > -3600000, msg: 'đã quá hạn!', urgent: true },
-        { key: '5min',  cond: diff > 0 && diff <= 5 * 60000, msg: 'còn 5 phút' },
-        { key: '30min', cond: diff > 5 * 60000 && diff <= 30 * 60000, msg: 'còn 30 phút' },
-        { key: '1h',    cond: diff > 30 * 60000 && diff <= 3600000, msg: 'còn 1 giờ' },
-        { key: '3h',    cond: diff > 3600000 && diff <= 3 * 3600000, msg: 'còn 3 giờ' },
-        { key: '1d',    cond: diff > 3 * 3600000 && diff <= 86400000, msg: 'còn 1 ngày' }
-      ];
+      /* Overdue: bắn 1 lần khi vừa quá hạn < 1h */
+      if (diff < 0 && diff > -WINDOW_MS) {
+        const k = `task_${t.id}_overdue`;
+        if (!wasSent(k)) {
+          markSent(k);
+          showNotify('🚨 ' + t.title, 'Đã quá hạn!', {
+            tag: `task_${t.id}`, requireInteraction: true, data: { url: './#/todo' }
+          });
+        }
+      }
 
-      for (const w of wins) {
-        if (!w.cond) continue;
-        const k = `task_${t.id}_${w.key}`;
+      /* Các mốc */
+      for (const mins of nf.before) {
+        const targetMs = mins * 60000;
+        const k = `task_${t.id}_${mins}`;
         if (wasSent(k)) continue;
-        markSent(k);
-        showNotify(
-          (w.urgent ? '🚨 ' : '📋 ') + t.title,
-          `Deadline ${w.msg}` + (t.subject ? ` • ${t.subject}` : ''),
-          { tag: `task_${t.id}`, requireInteraction: !!w.urgent, data: { url: './#/todo' } }
-        );
-        break;
+        if (diff <= targetMs && diff > targetMs - WINDOW_MS) {
+          markSent(k);
+          showNotify(
+            '📋 ' + t.title,
+            `Deadline ${formatOffset(mins)}` + (t.subject ? ` • ${t.subject}` : ''),
+            { tag: `task_${t.id}`, data: { url: './#/todo' } }
+          );
+        }
       }
     }
   }
 
   /* ---------- CHECK EXAMS ---------- */
   function checkExams() {
-    if (!settings.examsEnabled) return;
     const exams = readJSON('pdfReader_exams_v1', []);
     if (!Array.isArray(exams)) return;
     const now = Date.now();
 
     for (const e of exams) {
+      const nf = normalizeExamNotify(e.notify);
+      if (!nf.enabled) continue;
+
       const dl = new Date(e.datetime).getTime();
       if (isNaN(dl)) continue;
       const diff = dl - now;
       if (diff < 0) continue;
-      const days = diff / 86400000;
 
-      const wins = [
-        { key: '1h',  cond: days <= 1 / 24 && days > 0, msg: 'còn 1 giờ!', urgent: true },
-        { key: '1d',  cond: days <= 1 && days > 1 / 24, msg: 'còn 1 ngày' },
-        { key: '3d',  cond: days <= 3 && days > 1, msg: 'còn 3 ngày' },
-        { key: '7d',  cond: days <= 7 && days > 3, msg: 'còn 7 ngày' },
-        { key: '14d', cond: days <= 14 && days > 7, msg: 'còn 2 tuần' }
-      ];
-
-      for (const w of wins) {
-        if (!w.cond) continue;
-        const k = `exam_${e.id}_${w.key}`;
+      for (const mins of nf.before) {
+        const targetMs = mins * 60000;
+        const k = `exam_${e.id}_${mins}`;
         if (wasSent(k)) continue;
-        markSent(k);
-        showNotify(
-          (w.urgent ? '🚨 ' : '⏳ ') + e.name,
-          `Kì thi ${w.msg}` + (e.subject ? ` • ${e.subject}` : '') + (e.location ? ` • ${e.location}` : ''),
-          { tag: `exam_${e.id}`, requireInteraction: !!w.urgent, data: { url: './#/exam' } }
-        );
-        break;
+        if (diff <= targetMs && diff > targetMs - WINDOW_MS) {
+          markSent(k);
+          showNotify(
+            '⏳ ' + e.name,
+            `Kì thi ${formatOffset(mins)}` + (e.subject ? ` • ${e.subject}` : '') + (e.location ? ` • ${e.location}` : ''),
+            { tag: `exam_${e.id}`, data: { url: './#/exam' } }
+          );
+        }
       }
     }
   }
 
-  /* ---------- CHECK DAILY ---------- */
+  /* ---------- DAILY ---------- */
   function sameDay(a, b) {
-    return a.getFullYear() === b.getFullYear()
-        && a.getMonth() === b.getMonth()
-        && a.getDate() === b.getDate();
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
 
   function buildDailySummary() {
@@ -194,12 +208,12 @@
     const lines = [];
 
     if (settings.contentTasks && Array.isArray(tasks)) {
-      const todayTasks = tasks.filter(t => !t.done && t.deadline && sameDay(new Date(t.deadline), now));
-      if (todayTasks.length > 0) lines.push(`📋 ${todayTasks.length} task hôm nay`);
+      const list = tasks.filter(t => !t.done && t.deadline && sameDay(new Date(t.deadline), now));
+      if (list.length > 0) lines.push(`📋 ${list.length} task hôm nay`);
     }
     if (settings.contentOverdue && Array.isArray(tasks)) {
-      const overdueTasks = tasks.filter(t => !t.done && t.deadline && new Date(t.deadline) < now);
-      if (overdueTasks.length > 0) lines.push(`🔥 ${overdueTasks.length} task quá hạn`);
+      const list = tasks.filter(t => !t.done && t.deadline && new Date(t.deadline) < now);
+      if (list.length > 0) lines.push(`🔥 ${list.length} task quá hạn`);
     }
     if (settings.contentExams && Array.isArray(exams)) {
       const upcoming = exams.filter(e => {
@@ -217,22 +231,16 @@
   }
 
   function checkDaily() {
-    if (!settings.dailyEnabled) return;
-    if (!isEnabled()) return;
-
+    if (!settings.dailyEnabled || !isEnabled()) return;
     const now = new Date();
     const todayKey = now.toDateString();
-    const lastSent = localStorage.getItem(LAST_DAILY_KEY) || '';
-    if (lastSent === todayKey) return;
-
+    if (localStorage.getItem(LAST_DAILY_KEY) === todayKey) return;
     const nowMin = now.getHours() * 60 + now.getMinutes();
     const targetMin = settings.dailyHour * 60 + settings.dailyMinute;
     if (nowMin < targetMin) return;
 
-    const body = buildDailySummary();
-    showNotify('📚 Nhắc học tập hôm nay', body, {
-      tag: 'daily',
-      data: { url: './#/home' }
+    showNotify('📚 Nhắc học tập hôm nay', buildDailySummary(), {
+      tag: 'daily', data: { url: './#/home' }
     });
     try { localStorage.setItem(LAST_DAILY_KEY, todayKey); } catch (_) {}
   }
@@ -252,7 +260,7 @@
     if (checkTimer) { clearInterval(checkTimer); checkTimer = null; }
   }
 
-  /* ---------- UI: SIDEBAR BUTTON ---------- */
+  /* ---------- SIDEBAR UI ---------- */
   function updateUI() {
     const btn = document.getElementById('notifyToggle');
     if (!btn) return;
@@ -286,8 +294,6 @@
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
     set('nfDailyEnabled', settings.dailyEnabled);
-    set('nfTasksEnabled', settings.tasksEnabled);
-    set('nfExamsEnabled', settings.examsEnabled);
     set('nfContentTasks', settings.contentTasks);
     set('nfContentOverdue', settings.contentOverdue);
     set('nfContentExams', settings.contentExams);
@@ -298,10 +304,8 @@
       const mm = String(settings.dailyMinute).padStart(2, '0');
       timeEl.value = `${hh}:${mm}`;
     }
-
     const timeRow = document.getElementById('nfTimeRow');
     if (timeRow) timeRow.style.display = settings.dailyEnabled ? '' : 'none';
-
     const contentBlock = document.getElementById('nfContentBlock');
     if (contentBlock) contentBlock.style.display = settings.dailyEnabled ? '' : 'none';
   }
@@ -330,75 +334,47 @@
       if (e.key === 'Escape' && modal.classList.contains('show')) closeSettings();
     });
 
-    // Permission button
     document.getElementById('nfPermBtn')?.addEventListener('click', async () => {
       const p = await ensurePermission();
-      if (p === 'granted') {
-        setEnabled(true);
-        toast('🔔 Đã bật thông báo');
-      } else if (p === 'denied') {
-        toast('🚫 Bạn đã từ chối quyền thông báo');
-      }
+      if (p === 'granted') { setEnabled(true); toast('🔔 Đã bật thông báo'); }
+      else if (p === 'denied') toast('🚫 Bạn đã từ chối quyền thông báo');
       refreshSettingsUI();
     });
 
-    // Toggle daily
     document.getElementById('nfDailyEnabled')?.addEventListener('change', (e) => {
       settings.dailyEnabled = e.target.checked;
       refreshSettingsUI();
     });
-
-    // Time
     document.getElementById('nfDailyTime')?.addEventListener('change', (e) => {
       const [h, m] = (e.target.value || '07:00').split(':');
       settings.dailyHour = parseInt(h, 10) || 0;
       settings.dailyMinute = parseInt(m, 10) || 0;
     });
-
-    // Other toggles
-    document.getElementById('nfTasksEnabled')?.addEventListener('change', (e) => { settings.tasksEnabled = e.target.checked; });
-    document.getElementById('nfExamsEnabled')?.addEventListener('change', (e) => { settings.examsEnabled = e.target.checked; });
     document.getElementById('nfContentTasks')?.addEventListener('change', (e) => { settings.contentTasks = e.target.checked; });
     document.getElementById('nfContentOverdue')?.addEventListener('change', (e) => { settings.contentOverdue = e.target.checked; });
     document.getElementById('nfContentExams')?.addEventListener('change', (e) => { settings.contentExams = e.target.checked; });
 
-    // Save
     document.getElementById('nfSaveBtn')?.addEventListener('click', async () => {
-      // Nếu user bật daily mà chưa có quyền → xin quyền
       if (settings.dailyEnabled && (!('Notification' in window) || Notification.permission !== 'granted')) {
         const p = await ensurePermission();
-        if (p !== 'granted') {
-          toast('⚠️ Cần cấp quyền thông báo trước');
-          refreshSettingsUI();
-          return;
-        }
+        if (p !== 'granted') { toast('⚠️ Cần cấp quyền thông báo trước'); refreshSettingsUI(); return; }
         setEnabled(true);
       }
       saveSettings();
-      // Nếu bật daily thì đảm bảo overall enabled
       if (settings.dailyEnabled && Notification.permission === 'granted') setEnabled(true);
       startChecking();
       toast('💾 Đã lưu cài đặt');
       closeSettings();
     });
 
-    // Test
     document.getElementById('nfTestBtn')?.addEventListener('click', async () => {
       const p = await ensurePermission();
-      if (p !== 'granted') {
-        toast('⚠️ Cần cấp quyền thông báo trước');
-        refreshSettingsUI();
-        return;
-      }
-      // Force show even if not "enabled"
-      const wasEnabled = isEnabled();
-      if (!wasEnabled) setEnabled(true);
-      const body = buildDailySummary();
-      await showNotify('📚 Nhắc học tập (thử)', body, { tag: 'test' });
+      if (p !== 'granted') { toast('⚠️ Cần cấp quyền thông báo trước'); refreshSettingsUI(); return; }
+      if (!isEnabled()) setEnabled(true);
+      await showNotify('📚 Nhắc học tập (thử)', buildDailySummary(), { tag: 'test' });
       toast('🔔 Đã gửi thông báo thử');
     });
 
-    // Sidebar button → open settings
     const btn = document.getElementById('notifyToggle');
     if (btn) btn.addEventListener('click', openSettings);
   }
@@ -406,27 +382,16 @@
   /* ---------- INIT ---------- */
   async function init() {
     loadSettings();
-
     if ('serviceWorker' in navigator) {
-      try {
-        swRegistration = await navigator.serviceWorker.register('sw.js', { scope: './' });
-      } catch (err) {
-        console.warn('[SW] đăng ký thất bại:', err);
-      }
+      try { swRegistration = await navigator.serviceWorker.register('sw.js', { scope: './' }); }
+      catch (err) { console.warn('[SW] đăng ký thất bại:', err); }
     }
-
     bindSettingsUI();
-
-    if (isEnabled() && Notification.permission === 'granted') {
-      startChecking();
-    }
-
+    if (isEnabled() && Notification.permission === 'granted') startChecking();
     updateUI();
-
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && isEnabled()) checkAll();
     });
-
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (e) => {
         if (e.data && e.data.type === 'notify-click') {
@@ -440,12 +405,5 @@
     }
   }
 
-  window.Notify = {
-    init,
-    isEnabled,
-    checkAll,
-    show: showNotify,
-    openSettings,
-    closeSettings
-  };
+  window.Notify = { init, isEnabled, checkAll, show: showNotify, openSettings, closeSettings };
 })();

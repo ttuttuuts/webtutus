@@ -6,6 +6,18 @@
   const STORAGE_KEY = 'pdfReader_todos_v1';
   const SUBJECTS = ['Toán', 'Lý', 'Hoá', 'Anh', 'Văn', 'Sử', 'Địa', 'Sinh', 'Khác'];
   const PRIORITIES = { high: 'Cao', normal: 'Bình thường', low: 'Thấp' };
+  const DEFAULT_NOTIFY = { enabled: true, before: [1440, 60, 30] };
+  const OFFSET_OPTIONS = [
+    { mins: 2880, label: '2 ngày' },
+    { mins: 1440, label: '1 ngày' },
+    { mins: 720,  label: '12 giờ' },
+    { mins: 360,  label: '6 giờ' },
+    { mins: 180,  label: '3 giờ' },
+    { mins: 60,   label: '1 giờ' },
+    { mins: 30,   label: '30 phút' },
+    { mins: 15,   label: '15 phút' },
+    { mins: 5,    label: '5 phút' }
+  ];
 
   let tasks = [];
   let filter = 'all';
@@ -19,19 +31,20 @@
       tasks = raw ? JSON.parse(raw) : [];
       if (!Array.isArray(tasks)) tasks = [];
     } catch (_) { tasks = []; }
+    /* migrate */
+    tasks.forEach(t => {
+      if (!t.notify) t.notify = { enabled: true, before: DEFAULT_NOTIFY.before.slice() };
+      else {
+        if (!Array.isArray(t.notify.before)) t.notify.before = DEFAULT_NOTIFY.before.slice();
+        if (typeof t.notify.enabled !== 'boolean') t.notify.enabled = true;
+      }
+    });
   }
-  function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch (_) {}
-  }
+  function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch (_) {} }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
-  function parseDeadline(s) {
-    if (!s) return null;
-    const d = new Date(s);
-    return isNaN(d.getTime()) ? null : d;
-  }
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function parseDeadline(s) { if (!s) return null; const d = new Date(s); return isNaN(d.getTime()) ? null : d; }
+
   function classify(task) {
     if (task.done) return 'done';
     const dl = parseDeadline(task.deadline);
@@ -80,6 +93,10 @@
     const dl = parseDeadline(task.deadline);
     const dlInfo = formatDeadline(dl);
     const prio = task.priority || 'normal';
+    const nf = task.notify || DEFAULT_NOTIFY;
+    const notifyBadge = nf.enabled
+      ? `<span class="notify-badge">🔔 ${nf.before.length} mốc</span>`
+      : `<span class="notify-badge off">🔕 Tắt</span>`;
     return `
       <div class="td-item ${task.done ? 'done' : ''}" data-id="${task.id}">
         <button class="td-check ${task.done ? 'checked' : ''}" data-act="toggle" title="${task.done ? 'Bỏ đánh dấu' : 'Đánh dấu xong'}"></button>
@@ -89,6 +106,7 @@
             ${task.subject ? `<span class="td-tag subject">${escapeHtml(task.subject)}</span>` : ''}
             ${prio !== 'normal' ? `<span class="td-tag prio-${prio}">${PRIORITIES[prio]}</span>` : ''}
             <span class="td-time ${dlInfo.cls}">🕒 ${dlInfo.text}</span>
+            ${notifyBadge}
           </div>
         </div>
         <div class="td-actions">
@@ -124,21 +142,12 @@
     groups.today.sort(byDl);
     groups.future.sort(byDl);
     groups.done.sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
-    const labels = {
-      overdue: '🔥 Quá hạn',
-      today: '⏰ Hôm nay',
-      future: '📅 Sắp tới',
-      done: '✅ Đã hoàn thành'
-    };
+    const labels = { overdue: '🔥 Quá hạn', today: '⏰ Hôm nay', future: '📅 Sắp tới', done: '✅ Đã hoàn thành' };
     let html = '';
     for (const key of ['overdue', 'today', 'future', 'done']) {
       const arr = groups[key];
       if (arr.length === 0) continue;
-      html += `
-        <div class="td-group ${key}">
-          <h3 class="td-group-title">${labels[key]}<span class="cnt">${arr.length}</span></h3>
-          <div class="td-list">${arr.map(renderTaskItem).join('')}</div>
-        </div>`;
+      html += `<div class="td-group ${key}"><h3 class="td-group-title">${labels[key]}<span class="cnt">${arr.length}</span></h3><div class="td-list">${arr.map(renderTaskItem).join('')}</div></div>`;
     }
     return html;
   }
@@ -194,8 +203,28 @@
               <input type="datetime-local" id="tdInpDeadline">
             </div>
             <div class="td-field">
+              <label>🔔 Nhắc nhở cho công việc này</label>
+              <div class="nf-block" id="tdNotifyBlock">
+                <div class="nf-block-head">
+                  <div class="nf-block-title">Bật thông báo</div>
+                  <label class="nf-switch">
+                    <input type="checkbox" id="tdInpNotifyEnabled">
+                    <span></span>
+                  </label>
+                </div>
+                <div class="nf-block-grid" id="tdNotifyGrid">
+                  ${OFFSET_OPTIONS.map(o => `
+                    <label class="nf-block-item">
+                      <input type="checkbox" data-offset="${o.mins}">
+                      <span>${o.label}</span>
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="td-field">
               <label>Ghi chú</label>
-              <textarea id="tdInpNote" rows="3" placeholder="Chi tiết thêm..." maxlength="1000"></textarea>
+              <textarea id="tdInpNote" rows="2" placeholder="Chi tiết thêm..." maxlength="1000"></textarea>
             </div>
           </div>
           <div class="td-modal-foot">
@@ -212,16 +241,16 @@
     const searchEl = mount.querySelector('#tdSearch');
     const filterEl = mount.querySelector('#tdFilter');
     const pillEl = mount.querySelector('#tdFilterPill');
+    const nfBlock = mount.querySelector('#tdNotifyBlock');
+    const nfEnabled = mount.querySelector('#tdInpNotifyEnabled');
 
-    /* ---------- PILL TRƯỢT ---------- */
     function placeFilterPill(animate) {
       const activeBtn = filterEl.querySelector('.td-filter-btn.active');
       if (!pillEl || !activeBtn) return;
-      const filterRect = filterEl.getBoundingClientRect();
-      const btnRect = activeBtn.getBoundingClientRect();
-      const left = btnRect.left - filterRect.left + filterEl.scrollLeft;
-      const width = btnRect.width;
-
+      const fRect = filterEl.getBoundingClientRect();
+      const bRect = activeBtn.getBoundingClientRect();
+      const left = bRect.left - fRect.left + filterEl.scrollLeft;
+      const width = bRect.width;
       if (!animate) {
         const prev = pillEl.style.transition;
         pillEl.style.transition = 'none';
@@ -235,10 +264,16 @@
       }
     }
 
+    function updateNotifyUI() {
+      nfBlock.classList.toggle('off', !nfEnabled.checked);
+    }
+    nfEnabled.addEventListener('change', updateNotifyUI);
+
     function refresh() {
       statsEl.innerHTML = renderStats();
       listEl.innerHTML = renderList();
     }
+
     function openModal(task) {
       editingId = task ? task.id : null;
       mount.querySelector('#tdModalTitle').textContent = task ? 'Sửa công việc' : 'Thêm công việc';
@@ -247,6 +282,14 @@
       mount.querySelector('#tdInpPrio').value = task ? (task.priority || 'normal') : 'normal';
       mount.querySelector('#tdInpDeadline').value = task ? (task.deadline || '') : '';
       mount.querySelector('#tdInpNote').value = task ? (task.note || '') : '';
+
+      const nf = task ? (task.notify || DEFAULT_NOTIFY) : DEFAULT_NOTIFY;
+      nfEnabled.checked = nf.enabled !== false;
+      mount.querySelectorAll('[data-offset]').forEach(cb => {
+        cb.checked = (nf.before || []).includes(parseInt(cb.dataset.offset, 10));
+      });
+      updateNotifyUI();
+
       modalEl.classList.add('show');
       setTimeout(() => mount.querySelector('#tdInpTitle').focus(), 100);
     }
@@ -285,16 +328,14 @@
         tasks = tasks.filter(t => t.id !== id);
         save(); refresh();
         window.App && window.App.toast && window.App.toast('🗑️ Đã xoá');
-      } else if (act === 'edit') {
-        openModal(task);
-      }
+      } else if (act === 'edit') openModal(task);
     });
 
     mount.querySelector('#tdModalClose').addEventListener('click', closeModal);
     mount.querySelector('#tdModalCancel').addEventListener('click', closeModal);
     modalEl.addEventListener('click', (e) => { if (e.target === modalEl) closeModal(); });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modalEl && modalEl.classList.contains('show')) closeModal();
+      if (e.key === 'Escape' && modalEl.classList.contains('show')) closeModal();
     });
 
     mount.querySelector('#tdModalSave').addEventListener('click', () => {
@@ -304,13 +345,23 @@
         window.App && window.App.toast && window.App.toast('⚠️ Nhập tên công việc');
         return;
       }
+      const before = Array.from(mount.querySelectorAll('[data-offset]:checked'))
+        .map(cb => parseInt(cb.dataset.offset, 10))
+        .sort((a, b) => b - a);
+      const notifyEnabledVal = nfEnabled.checked;
+      const beforeFinal = (notifyEnabledVal && before.length === 0)
+        ? DEFAULT_NOTIFY.before.slice()
+        : before;
+
       const data = {
         title,
         subject: mount.querySelector('#tdInpSubject').value,
         priority: mount.querySelector('#tdInpPrio').value,
         deadline: mount.querySelector('#tdInpDeadline').value || '',
-        note: mount.querySelector('#tdInpNote').value.trim()
+        note: mount.querySelector('#tdInpNote').value.trim(),
+        notify: { enabled: notifyEnabledVal, before: beforeFinal }
       };
+
       if (editingId) {
         const t = tasks.find(x => x.id === editingId);
         if (t) { Object.assign(t, data); t.updatedAt = Date.now(); }
@@ -323,29 +374,18 @@
     });
 
     refresh();
-
-    /* Đặt pill sau khi DOM đã ổn định */
     requestAnimationFrame(() => placeFilterPill(false));
 
-    /* Refit khi resize */
     if (window._tdFilterRO) window._tdFilterRO.disconnect();
     window._tdFilterRO = new ResizeObserver(() => {
-      if (!mount.isConnected) {
-        window._tdFilterRO.disconnect();
-        window._tdFilterRO = null;
-        return;
-      }
+      if (!mount.isConnected) { window._tdFilterRO.disconnect(); window._tdFilterRO = null; return; }
       placeFilterPill(false);
     });
     window._tdFilterRO.observe(filterEl);
 
     if (tickInterval) clearInterval(tickInterval);
     tickInterval = setInterval(() => {
-      if (!mount.isConnected) {
-        clearInterval(tickInterval);
-        tickInterval = null;
-        return;
-      }
+      if (!mount.isConnected) { clearInterval(tickInterval); tickInterval = null; return; }
       refresh();
     }, 60000);
   }

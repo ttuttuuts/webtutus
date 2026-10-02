@@ -5,6 +5,17 @@
 
   const STORAGE_KEY = 'pdfReader_exams_v1';
   const SUBJECTS = ['Toán', 'Lý', 'Hoá', 'Anh', 'Văn', 'Sử', 'Địa', 'Sinh', 'Khác'];
+  const DEFAULT_NOTIFY = { enabled: true, before: [10080, 1440, 60] };
+  const OFFSET_OPTIONS = [
+    { mins: 20160, label: '2 tuần' },
+    { mins: 10080, label: '1 tuần' },
+    { mins: 4320,  label: '3 ngày' },
+    { mins: 2880,  label: '2 ngày' },
+    { mins: 1440,  label: '1 ngày' },
+    { mins: 720,   label: '12 giờ' },
+    { mins: 180,   label: '3 giờ' },
+    { mins: 60,    label: '1 giờ' }
+  ];
 
   let exams = [];
   let editingId = null;
@@ -16,26 +27,30 @@
       exams = raw ? JSON.parse(raw) : [];
       if (!Array.isArray(exams)) exams = [];
     } catch (_) { exams = []; }
+    exams.forEach(e => {
+      if (!e.notify) e.notify = { enabled: true, before: DEFAULT_NOTIFY.before.slice() };
+      else {
+        if (!Array.isArray(e.notify.before)) e.notify.before = DEFAULT_NOTIFY.before.slice();
+        if (typeof e.notify.enabled !== 'boolean') e.notify.enabled = true;
+      }
+    });
   }
-  function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(exams)); } catch (_) {}
-  }
+  function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(exams)); } catch (_) {} }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
   function pad2(n) { return String(n).padStart(2, '0'); }
 
   function getRemaining(target) {
-    const now = Date.now();
-    const diff = target - now;
+    const diff = target - Date.now();
     if (diff <= 0) return { done: true, days: 0, hours: 0, minutes: 0, seconds: 0 };
     const totalSec = Math.floor(diff / 1000);
-    const days = Math.floor(totalSec / 86400);
-    const hours = Math.floor((totalSec % 86400) / 3600);
-    const minutes = Math.floor((totalSec % 3600) / 60);
-    const seconds = totalSec % 60;
-    return { done: false, days, hours, minutes, seconds };
+    return {
+      done: false,
+      days: Math.floor(totalSec / 86400),
+      hours: Math.floor((totalSec % 86400) / 3600),
+      minutes: Math.floor((totalSec % 3600) / 60),
+      seconds: totalSec % 60
+    };
   }
 
   function formatDateVN(ts) {
@@ -58,19 +73,22 @@
     if (!rem.done && rem.days <= 3) cls += ' critical';
     else if (!rem.done && rem.days <= 7) cls += ' urgent';
 
-    const timeHtml = rem.done ? `
-      <div class="ex-done-badge">✅ Đã thi xong</div>
-    ` : `
-      <div class="ex-countdown">
-        <div class="ex-unit"><div class="ex-num" data-tick="days">${rem.days}</div><div class="ex-lbl">Ngày</div></div>
-        <div class="ex-sep">:</div>
-        <div class="ex-unit"><div class="ex-num" data-tick="hours">${pad2(rem.hours)}</div><div class="ex-lbl">Giờ</div></div>
-        <div class="ex-sep">:</div>
-        <div class="ex-unit"><div class="ex-num" data-tick="minutes">${pad2(rem.minutes)}</div><div class="ex-lbl">Phút</div></div>
-        <div class="ex-sep">:</div>
-        <div class="ex-unit"><div class="ex-num" data-tick="seconds">${pad2(rem.seconds)}</div><div class="ex-lbl">Giây</div></div>
-      </div>
-    `;
+    const nf = exam.notify || DEFAULT_NOTIFY;
+    const notifyBadge = nf.enabled
+      ? `<span class="notify-badge">🔔 ${nf.before.length} mốc</span>`
+      : `<span class="notify-badge off">🔕 Tắt</span>`;
+
+    const timeHtml = rem.done
+      ? `<div class="ex-done-badge">✅ Đã thi xong</div>`
+      : `<div class="ex-countdown">
+          <div class="ex-unit"><div class="ex-num" data-tick="days">${rem.days}</div><div class="ex-lbl">Ngày</div></div>
+          <div class="ex-sep">:</div>
+          <div class="ex-unit"><div class="ex-num" data-tick="hours">${pad2(rem.hours)}</div><div class="ex-lbl">Giờ</div></div>
+          <div class="ex-sep">:</div>
+          <div class="ex-unit"><div class="ex-num" data-tick="minutes">${pad2(rem.minutes)}</div><div class="ex-lbl">Phút</div></div>
+          <div class="ex-sep">:</div>
+          <div class="ex-unit"><div class="ex-num" data-tick="seconds">${pad2(rem.seconds)}</div><div class="ex-lbl">Giây</div></div>
+        </div>`;
 
     return `
       <div class="ex-card${cls}" data-id="${exam.id}">
@@ -88,17 +106,12 @@
           ${exam.subject ? `<span class="ex-tag">${escapeHtml(exam.subject)}</span>` : ''}
           <span class="ex-when">📅 ${formatDateVN(dl)}</span>
           ${exam.location ? `<span class="ex-where">📍 ${escapeHtml(exam.location)}</span>` : ''}
+          ${notifyBadge}
         </div>
         ${timeHtml}
-        ${!rem.done ? `
-          <div class="ex-progress-wrap">
-            <div class="ex-progress"><div class="ex-progress-fill" style="width:${pct.toFixed(2)}%"></div></div>
-            <div class="ex-progress-label">Đã qua <b>${pct.toFixed(1)}%</b> thời gian chuẩn bị</div>
-          </div>
-        ` : ''}
+        ${!rem.done ? `<div class="ex-progress-wrap"><div class="ex-progress"><div class="ex-progress-fill" style="width:${pct.toFixed(2)}%"></div></div><div class="ex-progress-label">Đã qua <b>${pct.toFixed(1)}%</b> thời gian chuẩn bị</div></div>` : ''}
         ${exam.note ? `<div class="ex-note">💬 ${escapeHtml(exam.note)}</div>` : ''}
-      </div>
-    `;
+      </div>`;
   }
 
   function renderList() {
@@ -107,9 +120,8 @@
     }
     const now = Date.now();
     const sorted = exams.slice().sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
-    const nextExam = sorted.find(e => new Date(e.datetime).getTime() > now);
-    const nextId = nextExam ? nextExam.id : null;
-
+    const next = sorted.find(e => new Date(e.datetime).getTime() > now);
+    const nextId = next ? next.id : null;
     const upcoming = sorted.filter(e => new Date(e.datetime).getTime() > now);
     const past = sorted.filter(e => new Date(e.datetime).getTime() <= now);
 
@@ -167,8 +179,28 @@
               <input type="datetime-local" id="exInpDatetime">
             </div>
             <div class="ex-field">
+              <label>🔔 Nhắc nhở cho kì thi này</label>
+              <div class="nf-block" id="exNotifyBlock">
+                <div class="nf-block-head">
+                  <div class="nf-block-title">Bật thông báo</div>
+                  <label class="nf-switch">
+                    <input type="checkbox" id="exInpNotifyEnabled">
+                    <span></span>
+                  </label>
+                </div>
+                <div class="nf-block-grid" id="exNotifyGrid">
+                  ${OFFSET_OPTIONS.map(o => `
+                    <label class="nf-block-item">
+                      <input type="checkbox" data-offset="${o.mins}">
+                      <span>${o.label}</span>
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="ex-field">
               <label>Ghi chú</label>
-              <textarea id="exInpNote" rows="2" placeholder="VD: Cần mang máy tính, học kỹ phần đạo hàm..." maxlength="500"></textarea>
+              <textarea id="exInpNote" rows="2" placeholder="VD: Cần mang máy tính..." maxlength="500"></textarea>
             </div>
           </div>
           <div class="ex-modal-foot">
@@ -181,20 +213,23 @@
 
     const modalEl = mount.querySelector('#exModal');
     const listEl = mount.querySelector('#exList');
+    const nfBlock = mount.querySelector('#exNotifyBlock');
+    const nfEnabled = mount.querySelector('#exInpNotifyEnabled');
+
+    function updateNotifyUI() { nfBlock.classList.toggle('off', !nfEnabled.checked); }
+    nfEnabled.addEventListener('change', updateNotifyUI);
 
     function refresh() { listEl.innerHTML = renderList(); }
 
     function tick() {
       if (!mount.isConnected) return;
       const now = Date.now();
-      const cards = listEl.querySelectorAll('.ex-card');
-      cards.forEach(card => {
+      listEl.querySelectorAll('.ex-card').forEach(card => {
         const id = card.dataset.id;
         const exam = exams.find(e => e.id === id);
         if (!exam) return;
         const dl = new Date(exam.datetime).getTime();
         const rem = getRemaining(dl);
-
         const currentlyDone = card.classList.contains('done');
         if (rem.done !== currentlyDone) { refresh(); return; }
         if (rem.done) return;
@@ -231,13 +266,18 @@
       mount.querySelector('#exInpLocation').value = exam ? (exam.location || '') : '';
       mount.querySelector('#exInpDatetime').value = exam ? exam.datetime : '';
       mount.querySelector('#exInpNote').value = exam ? (exam.note || '') : '';
+
+      const nf = exam ? (exam.notify || DEFAULT_NOTIFY) : DEFAULT_NOTIFY;
+      nfEnabled.checked = nf.enabled !== false;
+      mount.querySelectorAll('[data-offset]').forEach(cb => {
+        cb.checked = (nf.before || []).includes(parseInt(cb.dataset.offset, 10));
+      });
+      updateNotifyUI();
+
       modalEl.classList.add('show');
       setTimeout(() => mount.querySelector('#exInpName').focus(), 100);
     }
-    function closeModal() {
-      modalEl.classList.remove('show');
-      editingId = null;
-    }
+    function closeModal() { modalEl.classList.remove('show'); editingId = null; }
 
     mount.querySelector('#exAddBtn').addEventListener('click', () => openModal(null));
 
@@ -249,15 +289,12 @@
       if (!exam) return;
       const act = e.target.closest('[data-act]');
       if (!act) return;
-      const a = act.dataset.act;
-      if (a === 'del') {
+      if (act.dataset.act === 'del') {
         if (!confirm(`Xoá kì thi "${exam.name}"?`)) return;
         exams = exams.filter(x => x.id !== id);
         save(); refresh();
         window.App && window.App.toast && window.App.toast('🗑️ Đã xoá');
-      } else if (a === 'edit') {
-        openModal(exam);
-      }
+      } else if (act.dataset.act === 'edit') openModal(exam);
     });
 
     mount.querySelector('#exModalClose').addEventListener('click', closeModal);
@@ -272,13 +309,24 @@
       const dt = mount.querySelector('#exInpDatetime').value;
       if (!name) { mount.querySelector('#exInpName').focus(); window.App && window.App.toast && window.App.toast('⚠️ Nhập tên kì thi'); return; }
       if (!dt) { mount.querySelector('#exInpDatetime').focus(); window.App && window.App.toast && window.App.toast('⚠️ Chọn ngày giờ thi'); return; }
+
+      const before = Array.from(mount.querySelectorAll('[data-offset]:checked'))
+        .map(cb => parseInt(cb.dataset.offset, 10))
+        .sort((a, b) => b - a);
+      const notifyEnabledVal = nfEnabled.checked;
+      const beforeFinal = (notifyEnabledVal && before.length === 0)
+        ? DEFAULT_NOTIFY.before.slice()
+        : before;
+
       const data = {
         name,
         subject: mount.querySelector('#exInpSubject').value,
         location: mount.querySelector('#exInpLocation').value.trim(),
         datetime: dt,
-        note: mount.querySelector('#exInpNote').value.trim()
+        note: mount.querySelector('#exInpNote').value.trim(),
+        notify: { enabled: notifyEnabledVal, before: beforeFinal }
       };
+
       if (editingId) {
         const t = exams.find(x => x.id === editingId);
         if (t) { Object.assign(t, data); t.updatedAt = Date.now(); }
@@ -294,11 +342,7 @@
 
     if (tickInterval) clearInterval(tickInterval);
     tickInterval = setInterval(() => {
-      if (!mount.isConnected) {
-        clearInterval(tickInterval);
-        tickInterval = null;
-        return;
-      }
+      if (!mount.isConnected) { clearInterval(tickInterval); tickInterval = null; return; }
       tick();
     }, 1000);
   }
