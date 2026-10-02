@@ -41,21 +41,73 @@ body{margin:0;min-height:100vh;font-family:"Segoe UI",system-ui,-apple-system,"H
 .sb-logo{width:42px;height:42px;flex:none;display:grid;place-items:center;font-size:22px;border-radius:13px;background:linear-gradient(135deg,#dbeafe,#c7d9fd)}
 .sb-title{font-size:15px;font-weight:800;color:var(--blue-deep)}
 .sb-sub{font-size:11px;color:var(--blue-2);font-weight:700;margin-top:1px}
-.sb-nav{flex:1;display:flex;flex-direction:column;gap:3px}
-.sb-section-label{font-size:10.5px;font-weight:800;letter-spacing:.8px;color:#94a3b8;text-transform:uppercase;padding:12px 10px 6px;display:flex;align-items:center;gap:6px}
+
+.sb-nav{flex:1;display:flex;flex-direction:column;gap:3px;position:relative;padding-top:4px}
+
+/* NAV PILL — nền xanh trượt mượt */
+.nav-pill{
+  position:absolute;
+  left:0;
+  width:100%;
+  height:42px;
+  border-radius:10px;
+  background:linear-gradient(135deg,#dbeafe,#d6e9ff);
+  box-shadow:inset 0 0 0 1.5px var(--blue-2);
+  pointer-events:none;
+  z-index:0;
+  opacity:0;
+  transition:
+    transform .42s cubic-bezier(.4,0,.2,1),
+    height .3s ease,
+    background .28s ease,
+    box-shadow .28s ease,
+    opacity .2s ease;
+  will-change:transform;
+}
+.nav-pill::before{
+  content:'';
+  position:absolute;
+  left:-12px;
+  top:50%;
+  transform:translateY(-50%);
+  width:4px;
+  height:22px;
+  border-radius:0 4px 4px 0;
+  background:var(--blue);
+}
+.nav-pill.soon{
+  background:linear-gradient(135deg,#fef3c7,#fde68a);
+  box-shadow:inset 0 0 0 1.5px #fbbf24;
+}
+.nav-pill.soon::before{background:#f59e0b}
+
+.sb-section-label{font-size:10.5px;font-weight:800;letter-spacing:.8px;color:#94a3b8;text-transform:uppercase;padding:12px 10px 6px;display:flex;align-items:center;gap:6px;position:relative;z-index:2}
 .sb-section-label:first-child{padding-top:2px}
 .sb-soon-dot{width:6px;height:6px;border-radius:50%;background:#f59e0b;animation:pulse 1.8s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
-.sb-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;border:none;background:transparent;font-family:inherit;font-size:13px;font-weight:600;color:#475569;cursor:pointer;text-align:left;width:100%;position:relative;transition:all .15s}
-.sb-item:hover{background:#f0f6ff;color:var(--blue-deep)}
-.sb-item.active{background:linear-gradient(135deg,#dbeafe,#d6e9ff);color:var(--blue-deep);font-weight:700;box-shadow:inset 0 0 0 1.5px var(--blue-2)}
-.sb-item.active::before{content:'';position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:4px;height:22px;border-radius:0 4px 4px 0;background:var(--blue)}
+
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;
+  border-radius:10px;
+  border:none;background:transparent;
+  font-family:inherit;font-size:13px;font-weight:600;
+  color:#475569;cursor:pointer;text-align:left;width:100%;
+  position:relative;z-index:1;
+  transition:color .22s ease;
+}
+.sb-item:hover{color:var(--blue-deep)}
+.sb-item.active{
+  color:var(--blue-deep);
+  font-weight:750;
+}
+.sb-item.soon{opacity:.72}
+.sb-item.soon.active{color:#92400e;font-weight:750}
 .sb-item .sb-icon{width:24px;height:24px;flex:none;display:grid;place-items:center;font-size:15px}
 .sb-item .sb-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sb-item.soon{opacity:.72}
-.sb-item.soon.active{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;box-shadow:inset 0 0 0 1.5px #fbbf24}
-.sb-soon-badge{font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:99px;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;flex:none}
+.sb-soon-badge{font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:99px;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;flex:none;transition:background .25s,color .25s}
 .sb-item.soon.active .sb-soon-badge{background:#92400e;color:#fef3c7}
+
 .sb-footer{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
 .sb-theme,.sb-logout{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:#fff;font-family:inherit;font-size:13px;font-weight:650;cursor:pointer;width:100%;text-align:left}
 .sb-theme{border:1.5px solid #c7d9fd;color:var(--blue-deep)}
@@ -71,8 +123,8 @@ body{margin:0;min-height:100vh;font-family:"Segoe UI",system-ui,-apple-system,"H
 .main-area::-webkit-scrollbar{width:10px}
 .main-area::-webkit-scrollbar-thumb{background:#b9cdf0;border-radius:99px;border:3px solid transparent;background-clip:content-box}
 .page{display:none}
-.page.active{display:block;animation:pageIn .3s ease-out}
-@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page.active{display:block;animation:pageIn .38s cubic-bezier(.22,1,.36,1)}
+@keyframes pageIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
 .sb-toggle{display:flex;position:fixed;top:20px;left:268px;z-index:96;width:32px;height:42px;border-radius:0 10px 10px 0;background:#fff;border:1.5px solid var(--blue-2);border-left:none;color:var(--blue-deep);cursor:pointer;align-items:center;justify-content:center;font-size:16px;font-weight:900;padding:0;transition:left .3s,width .3s,height .3s,border-radius .3s;box-shadow:4px 0 12px -8px rgba(37,99,235,.55);line-height:1}
 .sb-toggle:hover{background:#eff5ff;border-color:var(--blue);color:var(--blue)}
@@ -363,10 +415,14 @@ body.dark .sb-title{color:#93c5fd}
 body.dark .sb-sub{color:#60a5fa}
 body.dark .sb-section-label{color:#64748b}
 body.dark .sb-item{color:#cbd5e1}
-body.dark .sb-item:hover{background:rgba(59,130,246,.12);color:#93c5fd}
-body.dark .sb-item.active{background:linear-gradient(135deg,#1e3a5f,#1e40af33);color:#93c5fd;box-shadow:inset 0 0 0 1.5px #3b82f6}
-body.dark .sb-item.active::before{background:#60a5fa}
-body.dark .sb-item.soon.active{background:linear-gradient(135deg,#422006,#78350f);color:#fbbf24;box-shadow:inset 0 0 0 1.5px #f59e0b}
+body.dark .sb-item:hover{color:#93c5fd}
+body.dark .sb-item.active{color:#93c5fd}
+body.dark .sb-item.soon.active{color:#fbbf24}
+body.dark .nav-pill{background:linear-gradient(135deg,#1e3a5f,#1e40af33);box-shadow:inset 0 0 0 1.5px #3b82f6}
+body.dark .nav-pill::before{background:#60a5fa}
+body.dark .nav-pill.soon{background:linear-gradient(135deg,#422006,#78350f);box-shadow:inset 0 0 0 1.5px #f59e0b}
+body.dark .nav-pill.soon::before{background:#fbbf24}
+body.dark .sb-soon-badge{background:linear-gradient(135deg,#422006,#78350f);color:#fbbf24}
 body.dark .sb-item.soon.active .sb-soon-badge{background:#fbbf24;color:#422006}
 body.dark .sb-theme{background:#0b1220;border-color:#293548;color:#93c5fd}
 body.dark .sb-logout{background:transparent;border-color:#7f1d1d;color:#fca5a5}
@@ -584,9 +640,10 @@ body.dark .td-modal-close{color:#64748b}
       <div class="sb-logo">📘</div>
       <div class="sb-brand-text"><div class="sb-title">HoTroHocTap</div><div class="sb-sub">@tuttutuss</div></div>
     </div>
-    <nav class="sb-nav">
+    <nav class="sb-nav" id="sbNav">
+      <div class="nav-pill" id="navPill"></div>
       <div class="sb-section-label">Chính</div>
-      <button class="sb-item" data-route="home"><span class="sb-icon">🏠</span><span class="sb-label">Trang chủ</span></button>
+      <button class="sb-item active" data-route="home"><span class="sb-icon">🏠</span><span class="sb-label">Trang chủ</span></button>
       <button class="sb-item" data-route="pdf"><span class="sb-icon">📖</span><span class="sb-label">Đọc PDF</span></button>
       <button class="sb-item" data-route="formulas"><span class="sb-icon">📐</span><span class="sb-label">Sổ tay công thức</span></button>
       <button class="sb-item" data-route="todo"><span class="sb-icon">✅</span><span class="sb-label">To-do &amp; Deadline</span></button>

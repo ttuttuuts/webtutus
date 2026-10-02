@@ -63,7 +63,6 @@
     'pdf': { page: 'reader', title: 'Đọc PDF' },
     'reader': { page: 'reader', title: 'Đọc PDF' },
     'formulas': { page: 'formula', title: 'Sổ tay công thức' },
-    /* Feature placeholders — mỗi cái trỏ đến page 'feature' */
     'notes': { page: 'feature', title: 'Sổ tay ghi chú', icon: '📝', desc: 'Ghi chú cho từng file PDF.' },
     'flashcard': { page: 'feature', title: 'Flashcard & SRS', icon: '🃏', desc: 'Ôn tập theo lịch 1-3-7-15 ngày.' },
     'pomodoro': { page: 'feature', title: 'Pomodoro', icon: '🍅', desc: 'Đếm giờ học 25/5, streak.' },
@@ -91,6 +90,37 @@
     else location.hash = h;
   };
 
+  /* ---------- NAV PILL (nền xanh trượt mượt) ---------- */
+  function placeNavPill(animate) {
+    const pill = document.getElementById('navPill');
+    const nav = document.querySelector('.sb-nav');
+    if (!pill || !nav) return;
+    const activeItem = nav.querySelector('.sb-item.active');
+    if (!activeItem) { pill.style.opacity = '0'; return; }
+    pill.style.opacity = '1';
+
+    const navRect = nav.getBoundingClientRect();
+    const itemRect = activeItem.getBoundingClientRect();
+    const top = itemRect.top - navRect.top;
+    const h = itemRect.height;
+
+    const isSoon = activeItem.classList.contains('soon');
+    pill.classList.toggle('soon', isSoon);
+
+    if (!animate) {
+      const prev = pill.style.transition;
+      pill.style.transition = 'none';
+      pill.style.transform = `translateY(${top}px)`;
+      pill.style.height = h + 'px';
+      void pill.offsetHeight;
+      pill.style.transition = prev || '';
+    } else {
+      pill.style.transform = `translateY(${top}px)`;
+      pill.style.height = h + 'px';
+    }
+  }
+  window.App.placeNavPill = placeNavPill;
+
   function renderFeature(route, cfg) {
     const iconEl = document.getElementById('featureIcon');
     const titleEl = document.getElementById('featureTitle');
@@ -105,7 +135,6 @@
     if (feat && typeof feat.render === 'function') {
       feat.render(mount, cfg);
     } else {
-      /* Fallback: placeholder đẹp */
       mount.innerHTML = `
         <div class="feature-placeholder">
           <div class="ph-icon">${cfg.icon || '🚧'}</div>
@@ -123,7 +152,6 @@
     const nowOnReader = cfg.page === 'reader';
     lastRouteWasReader = nowOnReader;
 
-    /* Ẩn tất cả page, active đúng page */
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sb-item[data-route]').forEach(it => {
       it.classList.toggle('active', it.dataset.route === route);
@@ -140,7 +168,9 @@
 
     document.title = (cfg.title ? cfg.title + ' — ' : '') + SITE_NAME;
 
-    /* Cho pdf.js biết route đã đổi */
+    /* Trượt pill sang vị trí mục đang active */
+    requestAnimationFrame(() => placeNavPill(true));
+
     if (window.PdfModule && typeof window.PdfModule.onRouteChange === 'function') {
       window.PdfModule.onRouteChange({ route, cfg, wasOnReader, nowOnReader });
     }
@@ -179,6 +209,7 @@
         if (window.PdfModule && typeof window.PdfModule.onResize === 'function') {
           window.PdfModule.onResize();
         }
+        placeNavPill(false);
       }, 320);
     }
     updateToggleIcon();
@@ -186,7 +217,10 @@
 
   if (sbToggle) sbToggle.addEventListener('click', toggleSidebar);
   if (sbBackdrop) sbBackdrop.addEventListener('click', () => { closeSidebarDrawer(); updateToggleIcon(); });
-  window.addEventListener('resize', updateToggleIcon);
+  window.addEventListener('resize', () => {
+    updateToggleIcon();
+    placeNavPill(false);
+  });
 
   /* ---------- NAV CLICKS ---------- */
   document.querySelectorAll('[data-route]').forEach(el => {
@@ -208,6 +242,8 @@
       history.replaceState(null, '', '#/home');
     }
     window.App.handleRoute();
+    /* Đặt pill không animation lần đầu */
+    requestAnimationFrame(() => placeNavPill(false));
   };
   window.App.showLogin = function () {
     loginScreen.classList.remove('hidden');
@@ -299,6 +335,13 @@
     else if (e.data.type === 'calc-closed') window.App.closeCalculator();
   });
 
-  /* ---------- INIT THEME NGAY ---------- */
+  /* ---------- INIT THEME + PILL ---------- */
   window.App.applyTheme(localStorage.getItem(THEME_KEY) === 'dark');
+
+  window.addEventListener('load', () => {
+    requestAnimationFrame(() => placeNavPill(false));
+  });
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => requestAnimationFrame(() => placeNavPill(false)));
+  }
 })();
