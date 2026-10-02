@@ -310,6 +310,67 @@ button::-moz-focus-inner{border:0}
   .calc-popup .emulator{width:100%}
   .calc-fab{right:12px;bottom:12px;width:50px;height:50px;font-size:22px}
 }
+
+/* ============================================================
+   EMBEDDED MODE — khi calculator.html được nhúng trong iframe
+   ============================================================ */
+html.embedded, html.embedded body{
+  padding:0 !important;
+  margin:0 !important;
+  background:transparent !important;
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:100% !important;
+  overflow:hidden !important;
+  align-items:stretch !important;
+  justify-content:flex-start !important;
+}
+html.embedded .calc-fab{ display:none !important; }
+
+html.embedded .calc-popup{
+  position:fixed !important;
+  inset:0 !important;
+  right:0 !important; bottom:0 !important;
+  left:0 !important; top:0 !important;
+  width:100% !important;
+  height:100% !important;
+  max-width:none !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  transform:none !important;
+  opacity:1 !important;
+  visibility:visible !important;
+  transition:none !important;
+  pointer-events:auto !important;
+  display:flex !important;
+  flex-direction:column !important;
+  overflow:hidden !important;
+}
+html.embedded .calc-popup.closed,
+html.embedded .calc-popup.collapsed{
+  opacity:1 !important;
+  visibility:visible !important;
+  transform:none !important;
+  pointer-events:auto !important;
+}
+html.embedded .calc-popup.collapsed .popup-body{ display:block !important; }
+
+html.embedded .popup-bar{ cursor:default !important; }
+html.embedded .popup-body{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow:auto !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:flex-start !important;
+  padding:0 !important;
+}
+html.embedded .popup-scaler{
+  transform:none !important;
+  width:auto !important;
+  height:auto !important;
+}
 </style>
 </head>
 <body>
@@ -1346,10 +1407,11 @@ function fitPopup(){
 
   const barH = popupBar.offsetHeight;
   const isMobile = window.matchMedia('(max-width:640px)').matches;
+  const isEmbedded = document.documentElement.classList.contains('embedded');
 
-  const reserveBottom = isMobile ? 84 : 92;
-  const availH = window.innerHeight - 12 - reserveBottom - barH;
-  const availW = window.innerWidth - (isMobile ? 14 : 30);
+  const reserveBottom = isEmbedded ? 0 : (isMobile ? 84 : 92);
+  const availH = window.innerHeight - (isEmbedded ? 0 : 12) - reserveBottom - barH;
+  const availW = window.innerWidth - (isEmbedded ? 0 : (isMobile ? 14 : 30));
 
   if(availH <= 0 || availW <= 0) return;
 
@@ -1411,6 +1473,7 @@ function clampPopupPosition(){
 }
 popupBar.addEventListener('pointerdown', e => {
   if(e.target.closest('.pbtn')) return;
+  if (window.self !== window.top) return; /* embedded — không kéo */
   const r = calcPopup.getBoundingClientRect();
   calcPopup.style.right = 'auto';
   calcPopup.style.bottom = 'auto';
@@ -1446,6 +1509,48 @@ requestAnimationFrame(fitPopup);
 setTimeout(fitPopup, 80);
 window.addEventListener('load', fitPopup);
 if(document.fonts && document.fonts.ready){ document.fonts.ready.then(() => fitPopup()); }
+
+/* ============================================================
+   EMBEDDED MODE — phát hiện đang nằm trong iframe
+   ============================================================ */
+(function initEmbeddedMode(){
+  let embedded = false;
+  try { embedded = window.self !== window.top; } catch(_) { embedded = true; }
+  if (!embedded) return;
+
+  document.documentElement.classList.add('embedded');
+
+  /* Buộc popup luôn mở và fill khung iframe */
+  popupState = 'open';
+  applyPopupState();
+  calcPopup.classList.remove('closed', 'collapsed');
+
+  /* Nút "—" và "✕" gửi message cho trang cha */
+  popMin.onclick = (e) => {
+    e.stopPropagation();
+    try { window.parent.postMessage({ type: 'calc-minimized' }, '*'); } catch(_){}
+  };
+  popClose.onclick = (e) => {
+    e.stopPropagation();
+    try { window.parent.postMessage({ type: 'calc-closed' }, '*'); } catch(_){}
+  };
+
+  /* Thông báo cho parent */
+  try { window.parent.postMessage({ type: 'calc-opened' }, '*'); } catch(_){}
+
+  /* Fit lại cho đúng kích thước iframe */
+  requestAnimationFrame(fitPopup);
+  setTimeout(fitPopup, 100);
+  window.addEventListener('resize', fitPopup);
+
+  /* Lắng nghe theme từ parent (index.html gửi vào) */
+  window.addEventListener('message', (e) => {
+    if (!e.data || typeof e.data !== 'object') return;
+    if (e.data.type === 'theme') {
+      document.documentElement.dataset.theme = e.data.dark ? 'dark' : 'light';
+    }
+  });
+})();
 </script>
 </body>
 </html>

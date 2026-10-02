@@ -433,15 +433,28 @@ body.dark .signature{background:rgba(15,23,42,.9);color:#93c5fd;border-color:#3b
 /* ============ CALCULATOR IFRAME BRIDGE ============ */
 .calc-frame{
   position:fixed;
-  inset:0;
-  width:100vw;
-  height:100vh;
+  right:18px;
+  bottom:86px;
+  width:400px;
+  height:min(720px, calc(100vh - 110px));
   border:none;
-  z-index:94;
-  background:transparent;
+  z-index:95;
+  border-radius:14px;
+  box-shadow:0 34px 70px -16px rgba(30,64,175,.55),
+             0 0 0 1.5px rgba(59,130,246,.65);
+  background:#fff;
   display:none;
+  overflow:hidden;
 }
 .calc-frame.show{display:block}
+
+@media (max-width:640px){
+  .calc-frame{
+    right:6px;left:6px;bottom:78px;
+    width:auto;
+    height:min(700px, calc(100vh - 100px));
+  }
+}
 
 .calc-fab{
   position:fixed;
@@ -480,6 +493,7 @@ body.dark .signature{background:rgba(15,23,42,.9);color:#93c5fd;border-color:#3b
   100%{transform:scale(1.35);opacity:0}
 }
 body.dark .calc-fab{border-color:#0f172a}
+body.dark .calc-frame{background:#0f172a}
 </style>
 </head>
 <body>
@@ -1805,6 +1819,9 @@ function clearSelection() {
 }
 
 /* RENDERING */
+const DPR = window.devicePixelRatio || 1;
+const RENDER_ROOT_MARGIN = 800;
+
 function createPlaceholder(pageIdx, width, height) {
   const wrap = document.createElement('div');
   wrap.className = 'page-container';
@@ -2186,7 +2203,6 @@ const calcFab = document.getElementById('calcFab');
 function openCalculator() {
   calcFrame.classList.add('show');
   calcFab.classList.remove('show');
-  // Gửi theme hiện tại cho iframe
   try {
     const dark = document.body.classList.contains('dark');
     calcFrame.contentWindow.postMessage({ type: 'theme', dark }, '*');
@@ -2204,14 +2220,11 @@ function closeCalculator() {
   calcFab.classList.remove('show');
 }
 
-/* Nút trong sidebar / home card */
 document.getElementById('calcOpenBtn')?.addEventListener('click', openCalculator);
 document.getElementById('calcCardBtn')?.addEventListener('click', openCalculator);
 
-/* Nút FAB khi thu nhỏ */
 calcFab.addEventListener('click', openCalculator);
 
-/* Nhận tín hiệu từ iframe */
 window.addEventListener('message', (e) => {
   if (!e.data || typeof e.data !== 'object') return;
   if (e.data.type === 'calc-minimized') {
@@ -2219,11 +2232,10 @@ window.addEventListener('message', (e) => {
   } else if (e.data.type === 'calc-closed') {
     closeCalculator();
   } else if (e.data.type === 'calc-opened') {
-    // Đồng bộ trạng thái (nếu cần)
+    /* đồng bộ trạng thái nếu cần */
   }
 });
 
-/* Phím tắt Ctrl+M — toggle máy tính */
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if ((e.ctrlKey || e.metaKey) && (e.key === 'm' || e.key === 'M')) {
