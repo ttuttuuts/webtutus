@@ -6,27 +6,17 @@
   const STORAGE_KEY = 'pdfReader_exams_v1';
   const SUBJECTS = ['Toán', 'Lý', 'Hoá', 'Anh', 'Văn', 'Sử', 'Địa', 'Sinh', 'Khác'];
   const DEFAULT_NOTIFY = {
-    enabled: true,
-    mode: 'milestones',
-    before: [10080, 1440, 60],
-    dailyHour: 7,
-    dailyMinute: 0,
-    dailyFrom: 0
+    enabled: true, mode: 'milestones', before: [10080, 1440, 60],
+    dailyHour: 7, dailyMinute: 0, dailyFrom: 0
   };
   const OFFSET_OPTIONS = [
-    { mins: 20160, label: '2 tuần' },
-    { mins: 10080, label: '1 tuần' },
-    { mins: 4320,  label: '3 ngày' },
-    { mins: 2880,  label: '2 ngày' },
-    { mins: 1440,  label: '1 ngày' },
-    { mins: 720,   label: '12 giờ' },
-    { mins: 180,   label: '3 giờ' },
-    { mins: 60,    label: '1 giờ' }
+    { mins: 20160, label: '2 tuần' }, { mins: 10080, label: '1 tuần' },
+    { mins: 4320, label: '3 ngày' }, { mins: 2880, label: '2 ngày' },
+    { mins: 1440, label: '1 ngày' }, { mins: 720, label: '12 giờ' },
+    { mins: 180, label: '3 giờ' }, { mins: 60, label: '1 giờ' }
   ];
 
-  let exams = [];
-  let editingId = null;
-  let tickInterval = null;
+  let exams = [], editingId = null, tickInterval = null;
 
   function load() {
     try {
@@ -54,36 +44,21 @@
   function getRemaining(target) {
     const diff = target - Date.now();
     if (diff <= 0) return { done: true, days: 0, hours: 0, minutes: 0, seconds: 0 };
-    const totalSec = Math.floor(diff / 1000);
-    return {
-      done: false,
-      days: Math.floor(totalSec / 86400),
-      hours: Math.floor((totalSec % 86400) / 3600),
-      minutes: Math.floor((totalSec % 3600) / 60),
-      seconds: totalSec % 60
-    };
+    const s = Math.floor(diff / 1000);
+    return { done: false, days: Math.floor(s/86400), hours: Math.floor((s%86400)/3600), minutes: Math.floor((s%3600)/60), seconds: s%60 };
   }
-
-  /* ⭐ Format mới: "Ngày 11 tháng 12 năm 2026 • 07:00" */
   function formatDateVN(ts) {
     const d = new Date(ts);
     const days = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-    const thu = days[d.getDay()];
-    const ngay = d.getDate();
-    const thang = d.getMonth() + 1;
-    const nam = d.getFullYear();
-    const gio = pad2(d.getHours());
-    const phut = pad2(d.getMinutes());
-    return `${thu}, ngày ${ngay} tháng ${thang} năm ${nam} • ${gio}:${phut}`;
+    return `${days[d.getDay()]}, ngày ${d.getDate()} tháng ${d.getMonth()+1} năm ${d.getFullYear()} • ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
   }
 
   function renderExamCard(exam, isNext) {
     const dl = new Date(exam.datetime).getTime();
     const rem = getRemaining(dl);
     const created = exam.createdAt || Date.now();
-    const total = dl - created;
-    const elapsed = Date.now() - created;
-    const pct = total > 0 ? Math.max(0, Math.min(100, (elapsed / total) * 100)) : 100;
+    const total = dl - created, elapsed = Date.now() - created;
+    const pct = total > 0 ? Math.max(0, Math.min(100, (elapsed/total)*100)) : 100;
 
     let cls = '';
     if (isNext && !rem.done) cls += ' next';
@@ -93,13 +68,9 @@
 
     const nf = exam.notify || DEFAULT_NOTIFY;
     let notifyBadge;
-    if (!nf.enabled) {
-      notifyBadge = `<span class="notify-badge off">🔕 Tắt</span>`;
-    } else if (nf.mode === 'daily') {
-      notifyBadge = `<span class="notify-badge">🔔 Hàng ngày ${pad2(nf.dailyHour || 7)}:${pad2(nf.dailyMinute || 0)}</span>`;
-    } else {
-      notifyBadge = `<span class="notify-badge">🔔 ${(nf.before || []).length} mốc</span>`;
-    }
+    if (!nf.enabled) notifyBadge = `<span class="notify-badge off">🔕 Tắt</span>`;
+    else if (nf.mode === 'daily') notifyBadge = `<span class="notify-badge">🔔 Hàng ngày ${pad2(nf.dailyHour||7)}:${pad2(nf.dailyMinute||0)}</span>`;
+    else notifyBadge = `<span class="notify-badge">🔔 ${(nf.before||[]).length} mốc</span>`;
 
     const timeHtml = rem.done
       ? `<div class="ex-done-badge">✅ Đã thi xong</div>`
@@ -113,41 +84,37 @@
           <div class="ex-unit"><div class="ex-num" data-tick="seconds">${pad2(rem.seconds)}</div><div class="ex-lbl">Giây</div></div>
         </div>`;
 
-    return `
-      <div class="ex-card${cls}" data-id="${exam.id}">
-        <div class="ex-head">
-          <div class="ex-title-row">
-            ${isNext && !rem.done ? '<span class="ex-next-badge">🎯 Kì thi gần nhất</span>' : ''}
-            <div class="ex-title">${escapeHtml(exam.name)}</div>
-          </div>
-          <div class="ex-actions">
-            <button class="ex-btn" data-act="edit" title="Sửa">✏️</button>
-            <button class="ex-btn del" data-act="del" title="Xoá">🗑️</button>
-          </div>
+    return `<div class="ex-card${cls}" data-id="${exam.id}">
+      <div class="ex-head">
+        <div class="ex-title-row">
+          ${isNext && !rem.done ? '<span class="ex-next-badge">🎯 Kì thi gần nhất</span>' : ''}
+          <div class="ex-title">${escapeHtml(exam.name)}</div>
         </div>
-        <div class="ex-meta">
-          ${exam.subject ? `<span class="ex-tag">${escapeHtml(exam.subject)}</span>` : ''}
-          <span class="ex-when">📅 ${formatDateVN(dl)}</span>
-          ${exam.location ? `<span class="ex-where">📍 ${escapeHtml(exam.location)}</span>` : ''}
-          ${notifyBadge}
+        <div class="ex-actions">
+          <button class="ex-btn" data-act="edit">✏️</button>
+          <button class="ex-btn del" data-act="del">🗑️</button>
         </div>
-        ${timeHtml}
-        ${!rem.done ? `<div class="ex-progress-wrap"><div class="ex-progress"><div class="ex-progress-fill" style="width:${pct.toFixed(2)}%"></div></div><div class="ex-progress-label">Đã qua <b>${pct.toFixed(1)}%</b> thời gian chuẩn bị</div></div>` : ''}
-        ${exam.note ? `<div class="ex-note">💬 ${escapeHtml(exam.note)}</div>` : ''}
-      </div>`;
+      </div>
+      <div class="ex-meta">
+        ${exam.subject ? `<span class="ex-tag">${escapeHtml(exam.subject)}</span>` : ''}
+        <span class="ex-when">📅 ${formatDateVN(dl)}</span>
+        ${exam.location ? `<span class="ex-where">📍 ${escapeHtml(exam.location)}</span>` : ''}
+        ${notifyBadge}
+      </div>
+      ${timeHtml}
+      ${!rem.done ? `<div class="ex-progress-wrap"><div class="ex-progress"><div class="ex-progress-fill" style="width:${pct.toFixed(2)}%"></div></div><div class="ex-progress-label">Đã qua <b>${pct.toFixed(1)}%</b> thời gian chuẩn bị</div></div>` : ''}
+      ${exam.note ? `<div class="ex-note">💬 ${escapeHtml(exam.note)}</div>` : ''}
+    </div>`;
   }
 
   function renderList() {
-    if (exams.length === 0) {
-      return `<div class="ex-empty"><span class="ico">⏳</span>Chưa có kì thi nào.<br>Bấm <b>＋ Thêm kì thi</b> để bắt đầu đếm ngược.</div>`;
-    }
+    if (exams.length === 0) return `<div class="ex-empty"><span class="ico">⏳</span>Chưa có kì thi nào.<br>Bấm <b>＋ Thêm kì thi</b> để bắt đầu đếm ngược.</div>`;
     const now = Date.now();
     const sorted = exams.slice().sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
     const next = sorted.find(e => new Date(e.datetime).getTime() > now);
     const nextId = next ? next.id : null;
     const upcoming = sorted.filter(e => new Date(e.datetime).getTime() > now);
     const past = sorted.filter(e => new Date(e.datetime).getTime() <= now);
-
     let html = '';
     if (upcoming.length > 0) {
       html += `<div class="ex-group"><h3 class="ex-group-title">🔜 Sắp tới<span class="cnt">${upcoming.length}</span></h3><div class="ex-list">`;
@@ -162,64 +129,44 @@
     return html;
   }
 
-  /* ---------- NOTIFY BLOCK HTML ---------- */
   function notifyBlockHtml(prefix, exam) {
     const nf = exam ? (exam.notify || DEFAULT_NOTIFY) : DEFAULT_NOTIFY;
     const isDaily = nf.mode === 'daily';
-    const hh = pad2(nf.dailyHour ?? 7);
-    const mm = pad2(nf.dailyMinute ?? 0);
-    return `
-      <div class="nf-block" id="${prefix}NotifyBlock">
-        <div class="nf-block-head">
-          <div class="nf-block-title">Bật thông báo</div>
-          <label class="nf-switch">
-            <input type="checkbox" id="${prefix}InpNotifyEnabled"${nf.enabled !== false ? ' checked' : ''}>
-            <span></span>
-          </label>
+    const hh = pad2(nf.dailyHour ?? 7), mm = pad2(nf.dailyMinute ?? 0);
+    return `<div class="nf-block" id="${prefix}NotifyBlock">
+      <div class="nf-block-head">
+        <div class="nf-block-title">Bật thông báo</div>
+        <label class="nf-switch"><input type="checkbox" id="${prefix}InpNotifyEnabled"${nf.enabled!==false?' checked':''}><span></span></label>
+      </div>
+      <div class="nf-mode-tabs">
+        <button type="button" class="nf-mode-tab${!isDaily?' active':''}" data-mode="milestones">🎯 Mốc cố định</button>
+        <button type="button" class="nf-mode-tab${isDaily?' active':''}" data-mode="daily">📅 Hàng ngày</button>
+      </div>
+      <div class="nf-mode-pane nf-mode-milestones" style="${isDaily?'display:none':''}">
+        <div class="nf-block-grid">
+          ${OFFSET_OPTIONS.map(o => `<label class="nf-block-item"><input type="checkbox" data-offset="${o.mins}"${(nf.before||[]).includes(o.mins)?' checked':''}><span>${o.label}</span></label>`).join('')}
         </div>
-
-        <div class="nf-mode-tabs" role="tablist">
-          <button type="button" class="nf-mode-tab${!isDaily ? ' active' : ''}" data-mode="milestones">🎯 Mốc cố định</button>
-          <button type="button" class="nf-mode-tab${isDaily ? ' active' : ''}" data-mode="daily">📅 Hàng ngày</button>
+      </div>
+      <div class="nf-mode-pane nf-mode-daily" style="${isDaily?'':'display:none'}">
+        <div class="nf-daily-row">
+          <div class="nf-daily-label"><div class="nf-daily-title">⏰ Giờ nhắc mỗi ngày</div><div class="nf-daily-desc">Bắn vào giờ này mỗi ngày</div></div>
+          <input type="time" class="nf-time" id="${prefix}InpDailyTime" value="${hh}:${mm}">
         </div>
-
-        <div class="nf-mode-pane nf-mode-milestones" style="${isDaily ? 'display:none' : ''}">
-          <div class="nf-block-grid">
-            ${OFFSET_OPTIONS.map(o => `
-              <label class="nf-block-item">
-                <input type="checkbox" data-offset="${o.mins}"${(nf.before || []).includes(o.mins) ? ' checked' : ''}>
-                <span>${o.label}</span>
-              </label>
-            `).join('')}
-          </div>
+        <div class="nf-daily-row">
+          <div class="nf-daily-label"><div class="nf-daily-title">📆 Bắt đầu nhắc trước</div><div class="nf-daily-desc">Chỉ nhắc khi còn ít hơn số ngày này</div></div>
+          <select class="nf-select" id="${prefix}InpDailyFrom">
+            <option value="0"${(nf.dailyFrom??0)===0?' selected':''}>Từ bây giờ</option>
+            <option value="3"${(nf.dailyFrom??0)===3?' selected':''}>3 ngày cuối</option>
+            <option value="7"${(nf.dailyFrom??0)===7?' selected':''}>7 ngày cuối</option>
+            <option value="14"${(nf.dailyFrom??0)===14?' selected':''}>14 ngày cuối</option>
+            <option value="30"${(nf.dailyFrom??0)===30?' selected':''}>30 ngày cuối</option>
+            <option value="60"${(nf.dailyFrom??0)===60?' selected':''}>60 ngày cuối</option>
+            <option value="90"${(nf.dailyFrom??0)===90?' selected':''}>90 ngày cuối</option>
+          </select>
         </div>
-
-        <div class="nf-mode-pane nf-mode-daily" style="${isDaily ? '' : 'display:none'}">
-          <div class="nf-daily-row">
-            <div class="nf-daily-label">
-              <div class="nf-daily-title">⏰ Giờ nhắc mỗi ngày</div>
-              <div class="nf-daily-desc">Thông báo sẽ bắn vào giờ này mỗi ngày</div>
-            </div>
-            <input type="time" class="nf-time" id="${prefix}InpDailyTime" value="${hh}:${mm}">
-          </div>
-          <div class="nf-daily-row">
-            <div class="nf-daily-label">
-              <div class="nf-daily-title">📆 Bắt đầu nhắc trước</div>
-              <div class="nf-daily-desc">Chỉ nhắc khi còn ít hơn số ngày này</div>
-            </div>
-            <select class="nf-select" id="${prefix}InpDailyFrom">
-              <option value="0"${(nf.dailyFrom ?? 0) === 0 ? ' selected' : ''}>Từ bây giờ</option>
-              <option value="3"${(nf.dailyFrom ?? 0) === 3 ? ' selected' : ''}>3 ngày cuối</option>
-              <option value="7"${(nf.dailyFrom ?? 0) === 7 ? ' selected' : ''}>7 ngày cuối</option>
-              <option value="14"${(nf.dailyFrom ?? 0) === 14 ? ' selected' : ''}>14 ngày cuối</option>
-              <option value="30"${(nf.dailyFrom ?? 0) === 30 ? ' selected' : ''}>30 ngày cuối</option>
-              <option value="60"${(nf.dailyFrom ?? 0) === 60 ? ' selected' : ''}>60 ngày cuối</option>
-              <option value="90"${(nf.dailyFrom ?? 0) === 90 ? ' selected' : ''}>90 ngày cuối</option>
-            </select>
-          </div>
-          <div class="nf-daily-hint">💡 Ví dụ: chọn 7 ngày cuối → mỗi sáng sẽ nhận "Còn X ngày nữa là thi"</div>
-        </div>
-      </div>`;
+        <div class="nf-daily-hint">💡 Ví dụ: chọn 7 ngày cuối → mỗi sáng nhận "Còn X ngày nữa là thi"</div>
+      </div>
+    </div>`;
   }
 
   function render(mount) {
@@ -232,51 +179,27 @@
         </div>
         <div id="exList"></div>
       </div>
-
       <div class="ex-modal" id="exModal">
         <div class="ex-modal-card">
-          <div class="ex-modal-head">
-            <span id="exModalTitle">Thêm kì thi</span>
-            <button class="ex-modal-close" id="exModalClose">✕</button>
-          </div>
+          <div class="ex-modal-head"><span id="exModalTitle">Thêm kì thi</span><button class="ex-modal-close" id="exModalClose">✕</button></div>
           <div class="ex-modal-body">
-            <div class="ex-field">
-              <label>Tên kì thi *</label>
-              <input type="text" id="exInpName" placeholder="VD: Kiểm tra 1 tiết chương 3..." maxlength="200">
-            </div>
+            <div class="ex-field"><label>Tên kì thi *</label><input type="text" id="exInpName" placeholder="VD: Kiểm tra 1 tiết chương 3..." maxlength="200"></div>
             <div class="ex-field-row">
-              <div class="ex-field">
-                <label>Môn học</label>
-                <select id="exInpSubject">
-                  <option value="">— Chọn môn —</option>
-                  ${SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('')}
-                </select>
-              </div>
-              <div class="ex-field">
-                <label>Địa điểm</label>
-                <input type="text" id="exInpLocation" placeholder="VD: Phòng A201" maxlength="100">
-              </div>
+              <div class="ex-field"><label>Môn học</label><select id="exInpSubject"><option value="">— Chọn môn —</option>${SUBJECTS.map(s => `<option value="${s}">${s}</option>`).join('')}</select></div>
+              <div class="ex-field"><label>Địa điểm</label><input type="text" id="exInpLocation" placeholder="VD: Phòng A201" maxlength="100"></div>
             </div>
-            <div class="ex-field">
-              <label>Ngày giờ thi *</label>
-              <input type="datetime-local" id="exInpDatetime">
-            </div>
-            <div class="ex-field">
-              <label>🔔 Nhắc nhở cho kì thi này</label>
-              <div id="exNotifyMount"></div>
-            </div>
-            <div class="ex-field">
-              <label>Ghi chú</label>
-              <textarea id="exInpNote" rows="2" placeholder="VD: Cần mang máy tính..." maxlength="500"></textarea>
-            </div>
+            <div class="ex-field"><label>Ngày giờ thi *</label><input type="datetime-local" id="exInpDatetime"></div>
+            <div class="ex-field"><label>🔔 Nhắc nhở cho kì thi này</label><div id="exNotifyMount"></div></div>
+            <div class="ex-field"><label>Ghi chú</label><textarea id="exInpNote" rows="2" placeholder="VD: Cần mang máy tính..." maxlength="500"></textarea></div>
           </div>
           <div class="ex-modal-foot">
             <button class="ex-modal-btn cancel" id="exModalCancel">Huỷ</button>
             <button class="ex-modal-btn save" id="exModalSave">Lưu</button>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
+
+    if (window.App && window.App.enhanceAllDT) window.App.enhanceAllDT(mount);
 
     const modalEl = mount.querySelector('#exModal');
     const listEl = mount.querySelector('#exList');
@@ -290,13 +213,9 @@
       currentMode = mode;
       const nfBlock = nfMount.querySelector('#exNotifyBlock');
       if (!nfBlock) return;
-
       const nfEnabled = nfBlock.querySelector('#exInpNotifyEnabled');
-      nfEnabled.addEventListener('change', () => {
-        nfBlock.classList.toggle('off', !nfEnabled.checked);
-      });
+      nfEnabled.addEventListener('change', () => nfBlock.classList.toggle('off', !nfEnabled.checked));
       nfBlock.classList.toggle('off', !nfEnabled.checked);
-
       nfBlock.querySelectorAll('.nf-mode-tab').forEach(tab => {
         tab.addEventListener('click', () => {
           const m = tab.dataset.mode;
@@ -321,7 +240,6 @@
         const currentlyDone = card.classList.contains('done');
         if (rem.done !== currentlyDone) { refresh(); return; }
         if (rem.done) return;
-
         const dEl = card.querySelector('[data-tick="days"]');
         const hEl = card.querySelector('[data-tick="hours"]');
         const mEl = card.querySelector('[data-tick="minutes"]');
@@ -330,16 +248,13 @@
         if (hEl) hEl.textContent = pad2(rem.hours);
         if (mEl) mEl.textContent = pad2(rem.minutes);
         if (sEl) sEl.textContent = pad2(rem.seconds);
-
         const created = exam.createdAt || now;
-        const total = dl - created;
-        const elapsed = now - created;
-        const pct = total > 0 ? Math.max(0, Math.min(100, (elapsed / total) * 100)) : 100;
+        const total = dl - created, elapsed = now - created;
+        const pct = total > 0 ? Math.max(0, Math.min(100, (elapsed/total)*100)) : 100;
         const fill = card.querySelector('.ex-progress-fill');
         if (fill) fill.style.width = pct.toFixed(2) + '%';
         const pctLabel = card.querySelector('.ex-progress-label b');
         if (pctLabel) pctLabel.textContent = pct.toFixed(1) + '%';
-
         card.classList.remove('urgent', 'critical');
         if (rem.days <= 3) card.classList.add('critical');
         else if (rem.days <= 7) card.classList.add('urgent');
@@ -354,11 +269,9 @@
       mount.querySelector('#exInpLocation').value = exam ? (exam.location || '') : '';
       mount.querySelector('#exInpDatetime').value = exam ? exam.datetime : '';
       mount.querySelector('#exInpNote').value = exam ? (exam.note || '') : '';
-
       const nf = exam ? (exam.notify || DEFAULT_NOTIFY) : DEFAULT_NOTIFY;
       nfMount.innerHTML = notifyBlockHtml('ex', { notify: nf });
       bindNotifyBlock(nf.mode || 'milestones');
-
       modalEl.classList.add('show');
       setTimeout(() => mount.querySelector('#exInpName').focus(), 100);
     }
@@ -394,38 +307,19 @@
       const dt = mount.querySelector('#exInpDatetime').value;
       if (!name) { mount.querySelector('#exInpName').focus(); window.App && window.App.toast && window.App.toast('⚠️ Nhập tên kì thi'); return; }
       if (!dt) { mount.querySelector('#exInpDatetime').focus(); window.App && window.App.toast && window.App.toast('⚠️ Chọn ngày giờ thi'); return; }
-
       const nfBlock = nfMount.querySelector('#exNotifyBlock');
       const enabledVal = nfBlock.querySelector('#exInpNotifyEnabled').checked;
-
       let notifyData;
       if (currentMode === 'daily') {
         const timeVal = nfBlock.querySelector('#exInpDailyTime').value || '07:00';
         const [hh, mm] = timeVal.split(':');
         const fromVal = parseInt(nfBlock.querySelector('#exInpDailyFrom').value, 10) || 0;
-        notifyData = {
-          enabled: enabledVal,
-          mode: 'daily',
-          before: [],
-          dailyHour: parseInt(hh, 10) || 7,
-          dailyMinute: parseInt(mm, 10) || 0,
-          dailyFrom: fromVal
-        };
+        notifyData = { enabled: enabledVal, mode: 'daily', before: [], dailyHour: parseInt(hh,10)||7, dailyMinute: parseInt(mm,10)||0, dailyFrom: fromVal };
       } else {
-        const before = Array.from(nfBlock.querySelectorAll('[data-offset]:checked'))
-          .map(cb => parseInt(cb.dataset.offset, 10))
-          .sort((a, b) => b - a);
+        const before = Array.from(nfBlock.querySelectorAll('[data-offset]:checked')).map(cb => parseInt(cb.dataset.offset, 10)).sort((a,b) => b-a);
         const beforeFinal = (enabledVal && before.length === 0) ? DEFAULT_NOTIFY.before.slice() : before;
-        notifyData = {
-          enabled: enabledVal,
-          mode: 'milestones',
-          before: beforeFinal,
-          dailyHour: 7,
-          dailyMinute: 0,
-          dailyFrom: 0
-        };
+        notifyData = { enabled: enabledVal, mode: 'milestones', before: beforeFinal, dailyHour: 7, dailyMinute: 0, dailyFrom: 0 };
       }
-
       const data = {
         name,
         subject: mount.querySelector('#exInpSubject').value,
@@ -434,7 +328,6 @@
         note: mount.querySelector('#exInpNote').value.trim(),
         notify: notifyData
       };
-
       if (editingId) {
         const t = exams.find(x => x.id === editingId);
         if (t) { Object.assign(t, data); t.updatedAt = Date.now(); }
@@ -456,9 +349,7 @@
   }
 
   window.Features['exam'] = {
-    title: 'Đếm ngược kì thi',
-    icon: '⏳',
-    desc: 'Đếm ngược tới ngày thi, xem thời gian còn lại.',
-    render
+    title: 'Đếm ngược kì thi', icon: '⏳',
+    desc: 'Đếm ngược tới ngày thi, xem thời gian còn lại.', render
   };
 })();

@@ -834,7 +834,40 @@ body.dark .nf-select,body.dark .nf-time{background:#0b1220;border-color:#293548;
 body.dark .nf-daily-hint{background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.5);color:#c4b5fd}
 body.dark .notify-badge{background:#422006;color:#fbbf24}
 body.dark .notify-badge.off{background:#1e293b;color:#64748b}
-</style>
+
+/* ============================================================
+   DATETIME CUSTOM — Hiển thị DD/MM/YYYY
+   ============================================================ */
+.dt-wrap{position:relative;width:100%;display:block}
+.dt-wrap .dt-native{
+  position:absolute;inset:0;
+  opacity:0;cursor:pointer;
+  width:100%;height:100%;
+  z-index:2;
+  border:0;padding:0;margin:0;
+  -webkit-appearance:none;appearance:none;
+}
+.dt-wrap .dt-display{
+  display:block;
+  padding:10px 12px;
+  border:1.5px solid var(--line);
+  border-radius:10px;
+  font-family:inherit;
+  font-size:13.5px;
+  color:var(--ink);
+  background:#fff;
+  width:100%;box-sizing:border-box;
+  position:relative;z-index:1;
+  min-height:18px;line-height:1.4;
+  transition:border-color .15s,box-shadow .15s;
+}
+.dt-wrap .dt-display.placeholder{color:#94a3b8}
+.dt-wrap .dt-native:focus + .dt-display{
+  border-color:var(--blue-2);
+  box-shadow:0 0 0 4px rgba(59,130,246,.15);
+}
+body.dark .dt-wrap .dt-display{background:#0b1220;border-color:#293548;color:var(--ink)}
+body.dark .dt-wrap .dt-display.placeholder{color:#475569}</style>
 </head>
 <body>
 

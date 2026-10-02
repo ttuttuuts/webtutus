@@ -7,7 +7,6 @@
   window.App = window.App || {};
   window.Features = window.Features || {};
 
-  /* ---------- TOAST / UTILS ---------- */
   window.App.toast = function (msg) {
     const el = document.getElementById('toast');
     if (!el) return;
@@ -38,7 +37,6 @@
     return (bytes / 1024 / 1024).toFixed(1) + ' MB';
   };
 
-  /* ---------- THEME ---------- */
   const THEME_KEY = 'pdfReader_theme';
   window.App.applyTheme = function (dark) {
     document.body.classList.toggle('dark', dark);
@@ -49,13 +47,10 @@
     try { localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light'); } catch (_) {}
     try {
       const frame = document.getElementById('calcFrame');
-      if (frame && frame.contentWindow) {
-        frame.contentWindow.postMessage({ type: 'theme', dark }, '*');
-      }
+      if (frame && frame.contentWindow) frame.contentWindow.postMessage({ type: 'theme', dark }, '*');
     } catch (_) {}
   };
 
-  /* ---------- ROUTER ---------- */
   const SITE_NAME = 'HoTroHocTap';
   const ROUTES = {
     '': { page: 'home', title: 'Trang chủ' },
@@ -73,7 +68,6 @@
     'tts': { page: 'feature', title: 'Đọc văn bản (TTS)', icon: '🔊', desc: 'Nghe đọc to đoạn văn bản.' },
     'mindmap': { page: 'feature', title: 'Sơ đồ tư duy', icon: '🗺️', desc: 'Kéo thả node tạo mind map.' },
   };
-
   window.App.ROUTES = ROUTES;
   window.App.SITE_NAME = SITE_NAME;
 
@@ -91,7 +85,6 @@
     else location.hash = h;
   };
 
-  /* ---------- NAV PILL ---------- */
   function placeNavPill(animate) {
     const pill = document.getElementById('navPill');
     const nav = document.querySelector('.sb-nav');
@@ -104,7 +97,6 @@
     const itemRect = activeItem.getBoundingClientRect();
     const top = itemRect.top - navRect.top;
     const h = itemRect.height;
-
     const isSoon = activeItem.classList.contains('soon');
     pill.classList.toggle('soon', isSoon);
 
@@ -168,19 +160,16 @@
     }
 
     document.title = (cfg.title ? cfg.title + ' — ' : '') + SITE_NAME;
-
     requestAnimationFrame(() => placeNavPill(true));
 
     if (window.PdfModule && typeof window.PdfModule.onRouteChange === 'function') {
       window.PdfModule.onRouteChange({ route, cfg, wasOnReader, nowOnReader });
     }
-
     closeSidebar();
   };
 
   window.addEventListener('hashchange', () => window.App.handleRoute());
 
-  /* ---------- SIDEBAR ---------- */
   const sbToggle = document.getElementById('sbToggle');
   const sidebar = document.getElementById('sidebar');
   const sbBackdrop = document.getElementById('sbBackdrop');
@@ -217,17 +206,12 @@
 
   if (sbToggle) sbToggle.addEventListener('click', toggleSidebar);
   if (sbBackdrop) sbBackdrop.addEventListener('click', () => { closeSidebarDrawer(); updateToggleIcon(); });
-  window.addEventListener('resize', () => {
-    updateToggleIcon();
-    placeNavPill(false);
-  });
+  window.addEventListener('resize', () => { updateToggleIcon(); placeNavPill(false); });
 
-  /* ---------- NAV CLICKS ---------- */
   document.querySelectorAll('[data-route]').forEach(el => {
     el.addEventListener('click', () => window.App.navigateTo(el.dataset.route));
   });
 
-  /* ---------- LOGIN ---------- */
   const LOGIN_KEY = 'pdfReaderLoggedIn';
   const loginScreen = document.getElementById('loginScreen');
   const loginForm = document.getElementById('loginForm');
@@ -271,14 +255,12 @@
 
   window.App.LOGIN_KEY = LOGIN_KEY;
 
-  /* ---------- THEME TOGGLE ---------- */
   document.getElementById('themeToggle').addEventListener('click', () => {
     const willBeDark = !document.body.classList.contains('dark');
     window.App.applyTheme(willBeDark);
     window.App.toast(willBeDark ? '🌙 Chế độ tối' : '☀️ Chế độ sáng');
   });
 
-  /* ---------- HOTKEYS ---------- */
   document.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'b' || e.key === 'B')) {
@@ -302,7 +284,6 @@
     }
   });
 
-  /* ---------- CALCULATOR BRIDGE ---------- */
   const calcFrame = document.getElementById('calcFrame');
   const calcFab = document.getElementById('calcFab');
 
@@ -334,7 +315,6 @@
     else if (e.data.type === 'calc-closed') window.App.closeCalculator();
   });
 
-  /* ---------- INIT THEME + PILL ---------- */
   window.App.applyTheme(localStorage.getItem(THEME_KEY) === 'dark');
 
   window.addEventListener('load', () => {
@@ -343,4 +323,53 @@
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => requestAnimationFrame(() => placeNavPill(false)));
   }
+
+  /* ============================================================
+     DATETIME DD/MM/YYYY — Custom display
+     ============================================================ */
+  function isoToDisplay(iso) {
+    if (!iso) return '';
+    const [date, time] = iso.split('T');
+    if (!date) return '';
+    const [y, m, d] = date.split('-');
+    return `${d}/${m}/${y}${time ? ' ' + time.slice(0, 5) : ''}`;
+  }
+  window.App.enhanceDT = function (input) {
+    if (!input || input._enhanced) return;
+    input._enhanced = true;
+    input.classList.add('dt-native');
+
+    const display = document.createElement('div');
+    display.className = 'dt-display';
+    const updateDisplay = () => {
+      if (input.value) {
+        display.textContent = isoToDisplay(input.value);
+        display.classList.remove('placeholder');
+      } else {
+        display.textContent = 'DD/MM/YYYY HH:MM';
+        display.classList.add('placeholder');
+      }
+    };
+    updateDisplay();
+
+    const wrap = document.createElement('div');
+    wrap.className = 'dt-wrap';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(display);
+    wrap.appendChild(input);
+
+    const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    Object.defineProperty(input, 'value', {
+      configurable: true,
+      get() { return desc.get.call(this); },
+      set(v) { desc.set.call(this, v); updateDisplay(); }
+    });
+
+    input.addEventListener('change', updateDisplay);
+    input.addEventListener('input', updateDisplay);
+  };
+  window.App.enhanceAllDT = function (scope) {
+    (scope || document).querySelectorAll('input[type="datetime-local"]:not(._enhanced)')
+      .forEach(inp => window.App.enhanceDT(inp));
+  };
 })();
