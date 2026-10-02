@@ -67,6 +67,7 @@
     'flashcard': { page: 'feature', title: 'Flashcard & SRS', icon: '🃏', desc: 'Ôn tập theo lịch 1-3-7-15 ngày.' },
     'pomodoro': { page: 'feature', title: 'Pomodoro', icon: '🍅', desc: 'Đếm giờ học 25/5, streak.' },
     'stats': { page: 'feature', title: 'Thống kê học tập', icon: '📊', desc: 'Biểu đồ thời gian học.' },
+    'exam': { page: 'feature', title: 'Đếm ngược kì thi', icon: '⏳', desc: 'Đếm ngược tới ngày thi.' },
     'todo': { page: 'feature', title: 'To-do & Deadline', icon: '✅', desc: 'Quản lý bài tập theo môn.' },
     'dictionary': { page: 'feature', title: 'Từ điển tra nhanh', icon: '🔤', desc: 'Tra Anh–Việt trong popup.' },
     'tts': { page: 'feature', title: 'Đọc văn bản (TTS)', icon: '🔊', desc: 'Nghe đọc to đoạn văn bản.' },
@@ -90,7 +91,7 @@
     else location.hash = h;
   };
 
-  /* ---------- NAV PILL (nền xanh trượt mượt) ---------- */
+  /* ---------- NAV PILL ---------- */
   function placeNavPill(animate) {
     const pill = document.getElementById('navPill');
     const nav = document.querySelector('.sb-nav');
@@ -168,7 +169,6 @@
 
     document.title = (cfg.title ? cfg.title + ' — ' : '') + SITE_NAME;
 
-    /* Trượt pill sang vị trí mục đang active */
     requestAnimationFrame(() => placeNavPill(true));
 
     if (window.PdfModule && typeof window.PdfModule.onRouteChange === 'function') {
@@ -242,7 +242,6 @@
       history.replaceState(null, '', '#/home');
     }
     window.App.handleRoute();
-    /* Đặt pill không animation lần đầu */
     requestAnimationFrame(() => placeNavPill(false));
   };
   window.App.showLogin = function () {
