@@ -368,7 +368,6 @@ html.embedded .popup-body{
   padding:0 !important;
   line-height:normal !important;
 }
-/* transform-origin top left để fitPopup scale khớp box đã set */
 html.embedded .popup-scaler{
   transform-origin: top left !important;
   width:auto;
@@ -1395,20 +1394,27 @@ function fitPopup(){
   popupScaler.style.transform = '';
   popupScaler.style.width = '';
   popupScaler.style.height = '';
-
   void popupScaler.offsetWidth;
 
   const natW = desktop.offsetWidth;
   const natH = desktop.offsetHeight;
   if(!natW || !natH) return;
 
-  const barH = popupBar.offsetHeight;
-  const isMobile = window.matchMedia('(max-width:640px)').matches;
   const isEmbedded = document.documentElement.classList.contains('embedded');
+  let availW, availH;
 
-  const reserveBottom = isEmbedded ? 0 : (isMobile ? 84 : 92);
-  const availH = window.innerHeight - (isEmbedded ? 0 : 12) - reserveBottom - barH;
-  const availW = window.innerWidth - (isEmbedded ? 0 : (isMobile ? 14 : 30));
+  if(isEmbedded){
+    /* ĐO TRỰC TIẾP .popup-body — không dùng window.innerHeight */
+    const bodyEl = popupScaler.parentElement;
+    availW = bodyEl.clientWidth;
+    availH = bodyEl.clientHeight;
+  } else {
+    const barH = popupBar.offsetHeight;
+    const isMobile = window.matchMedia('(max-width:640px)').matches;
+    const reserveBottom = isMobile ? 84 : 92;
+    availH = window.innerHeight - 12 - reserveBottom - barH;
+    availW = window.innerWidth - (isMobile ? 14 : 30);
+  }
 
   if(availH <= 0 || availW <= 0) return;
 
@@ -1534,6 +1540,7 @@ if(document.fonts && document.fonts.ready){ document.fonts.ready.then(() => fitP
 
   requestAnimationFrame(fitPopup);
   setTimeout(fitPopup, 100);
+  setTimeout(fitPopup, 350);
   window.addEventListener('resize', fitPopup);
 
   window.addEventListener('message', (e) => {
@@ -1542,6 +1549,15 @@ if(document.fonts && document.fonts.ready){ document.fonts.ready.then(() => fitP
       document.documentElement.dataset.theme = e.data.dark ? 'dark' : 'light';
     }
   });
+
+  /* Refit mỗi khi .popup-body hoặc desktop đổi kích thước */
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(fitPopup);
+    });
+    ro.observe(popupScaler.parentElement); /* .popup-body */
+    ro.observe(desktop);
+  }
 })();
 </script>
 </body>
