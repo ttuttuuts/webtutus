@@ -298,7 +298,6 @@
 
     refresh();
 
-    /* Auto-refresh countdown mỗi phút (chỉ khi trang còn hiển thị) */
     if (tickInterval) clearInterval(tickInterval);
     tickInterval = setInterval(() => {
       if (!mount.isConnected) {

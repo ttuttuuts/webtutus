@@ -117,6 +117,7 @@ body{margin:0;min-height:100vh;font-family:"Segoe UI",system-ui,-apple-system,"H
 .feature-card.soon::before{content:'SẮP RA MẮT';position:absolute;top:10px;right:10px;font-size:9px;font-weight:800;letter-spacing:.8px;color:#92400e;background:linear-gradient(135deg,#fef3c7,#fde68a);padding:3px 8px;border-radius:99px}
 .feature-card.formula .fc-icon{background:linear-gradient(135deg,#fce7f3,#fbcfe8)}
 .feature-card.calc .fc-icon{background:linear-gradient(135deg,#ede9fe,#ddd6fe)}
+.feature-card.todo .fc-icon{background:linear-gradient(135deg,#dcfce7,#bbf7d0)}
 .home-footer{text-align:center;font-size:12px;color:var(--muted);padding:20px 0 8px;line-height:1.7}
 .home-footer kbd{font-family:inherit;font-size:11px;font-weight:800;padding:2px 7px;border-radius:6px;background:#fff;color:var(--blue-deep);border:1.5px solid #c7d9fd;margin:0 2px}
 
@@ -384,6 +385,7 @@ body.dark .feature-card.soon .fc-icon{background:linear-gradient(135deg,#422006,
 body.dark .feature-card.soon::before{background:linear-gradient(135deg,#422006,#78350f);color:#fbbf24}
 body.dark .feature-card.formula .fc-icon{background:linear-gradient(135deg,#4c0519,#831843)}
 body.dark .feature-card.calc .fc-icon{background:linear-gradient(135deg,#2e1065,#4c1d95)}
+body.dark .feature-card.todo .fc-icon{background:linear-gradient(135deg,#052e16,#166534)}
 body.dark .home-footer kbd{background:#1e293b;color:#93c5fd;border-color:#334155}
 body.dark .feature-placeholder{background:rgba(15,23,42,.9);border-color:#3b82f6}
 body.dark .feature-placeholder h2{color:#e2e8f0}
@@ -587,6 +589,7 @@ body.dark .td-modal-close{color:#64748b}
       <button class="sb-item" data-route="home"><span class="sb-icon">🏠</span><span class="sb-label">Trang chủ</span></button>
       <button class="sb-item" data-route="pdf"><span class="sb-icon">📖</span><span class="sb-label">Đọc PDF</span></button>
       <button class="sb-item" data-route="formulas"><span class="sb-icon">📐</span><span class="sb-label">Sổ tay công thức</span></button>
+      <button class="sb-item" data-route="todo"><span class="sb-icon">✅</span><span class="sb-label">To-do &amp; Deadline</span></button>
       <button class="sb-item" id="calcOpenBtn"><span class="sb-icon">🧮</span><span class="sb-label">Máy tính khoa học</span></button>
 
       <div class="sb-section-label">Sắp ra mắt<span class="sb-soon-dot"></span></div>
@@ -594,7 +597,6 @@ body.dark .td-modal-close{color:#64748b}
       <button class="sb-item soon" data-route="flashcard"><span class="sb-icon">🃏</span><span class="sb-label">Flashcard &amp; SRS</span><span class="sb-soon-badge">Sắp</span></button>
       <button class="sb-item soon" data-route="pomodoro"><span class="sb-icon">🍅</span><span class="sb-label">Pomodoro</span><span class="sb-soon-badge">Sắp</span></button>
       <button class="sb-item soon" data-route="stats"><span class="sb-icon">📊</span><span class="sb-label">Thống kê học tập</span><span class="sb-soon-badge">Sắp</span></button>
-      <button class="sb-item soon" data-route="todo"><span class="sb-icon">✅</span><span class="sb-label">To-do &amp; Deadline</span><span class="sb-soon-badge">Sắp</span></button>
       <button class="sb-item soon" data-route="dictionary"><span class="sb-icon">🔤</span><span class="sb-label">Từ điển tra nhanh</span><span class="sb-soon-badge">Sắp</span></button>
       <button class="sb-item soon" data-route="tts"><span class="sb-icon">🔊</span><span class="sb-label">Đọc văn bản (TTS)</span><span class="sb-soon-badge">Sắp</span></button>
       <button class="sb-item soon" data-route="mindmap"><span class="sb-icon">🗺️</span><span class="sb-label">Sơ đồ tư duy</span><span class="sb-soon-badge">Sắp</span></button>
@@ -628,6 +630,12 @@ body.dark .td-modal-close{color:#64748b}
               <div class="fc-desc">Toán — Lý — Hoá — Anh + Mẹo tính nhanh.</div>
               <div class="fc-cta">Xem ngay →</div>
             </div>
+            <div class="feature-card todo" data-route="todo">
+              <div class="fc-icon">✅</div>
+              <div class="fc-title">To-do &amp; Deadline</div>
+              <div class="fc-desc">Quản lý bài tập theo môn, đếm ngược hạn chót.</div>
+              <div class="fc-cta">Mở ngay →</div>
+            </div>
             <div class="feature-card calc" id="calcCardBtn">
               <div class="fc-icon">🧮</div>
               <div class="fc-title">Máy tính fx-580VN X</div>
@@ -643,7 +651,6 @@ body.dark .td-modal-close{color:#64748b}
             <div class="feature-card soon" data-route="flashcard"><div class="fc-icon">🃏</div><div class="fc-title">Flashcard &amp; SRS</div><div class="fc-desc">Ôn tập theo lịch 1-3-7-15 ngày.</div></div>
             <div class="feature-card soon" data-route="pomodoro"><div class="fc-icon">🍅</div><div class="fc-title">Pomodoro</div><div class="fc-desc">Đếm giờ học 25/5, streak.</div></div>
             <div class="feature-card soon" data-route="stats"><div class="fc-icon">📊</div><div class="fc-title">Thống kê học tập</div><div class="fc-desc">Biểu đồ thời gian học.</div></div>
-            <div class="feature-card soon" data-route="todo"><div class="fc-icon">✅</div><div class="fc-title">To-do &amp; Deadline</div><div class="fc-desc">Quản lý bài tập theo môn.</div></div>
             <div class="feature-card soon" data-route="dictionary"><div class="fc-icon">🔤</div><div class="fc-title">Từ điển tra nhanh</div><div class="fc-desc">Tra Anh–Việt trong popup.</div></div>
             <div class="feature-card soon" data-route="tts"><div class="fc-icon">🔊</div><div class="fc-title">Đọc văn bản (TTS)</div><div class="fc-desc">Nghe đọc to đoạn văn bản.</div></div>
             <div class="feature-card soon" data-route="mindmap"><div class="fc-icon">🗺️</div><div class="fc-title">Sơ đồ tư duy</div><div class="fc-desc">Kéo thả node tạo mind map.</div></div>
