@@ -311,10 +311,13 @@
       if (act === 'toggle') {
         task.done = !task.done;
         task.doneAt = task.done ? Date.now() : 0;
+        /* Reset sent → có thể bắn lại cho lần tới */
+        window.Notify && window.Notify.resetSentForItem && window.Notify.resetSentForItem(task.id, 'task');
         save(); refresh();
       } else if (act === 'del') {
         if (!confirm(`Xoá "${task.title}"?`)) return;
         tasks = tasks.filter(t => t.id !== id);
+        window.Notify && window.Notify.resetSentForItem && window.Notify.resetSentForItem(id, 'task');
         save(); refresh();
         window.App && window.App.toast && window.App.toast('🗑️ Đã xoá');
       } else if (act === 'edit') openModal(task);
@@ -353,7 +356,12 @@
       };
       if (editingId) {
         const t = tasks.find(x => x.id === editingId);
-        if (t) { Object.assign(t, data); t.updatedAt = Date.now(); }
+        if (t) {
+          Object.assign(t, data);
+          t.updatedAt = Date.now();
+          /* Reset sent → nếu deadline đổi, mốc mới bắn lại */
+          window.Notify && window.Notify.resetSentForItem && window.Notify.resetSentForItem(t.id, 'task');
+        }
         window.App && window.App.toast && window.App.toast('✏️ Đã cập nhật');
       } else {
         tasks.push({ id: uid(), ...data, done: false, createdAt: Date.now(), doneAt: 0 });

@@ -1,7 +1,5 @@
 /* ============================================================
    NOTIFY MODULE — Per-item notification
-   - Mỗi task/exam tự quyết định mốc bắn
-   - Global: chỉ giữ permission + daily summary
    ============================================================ */
 (function () {
   'use strict';
@@ -11,25 +9,26 @@
   const SETTINGS_KEY = 'pdfReader_notify_settings';
   const LAST_DAILY_KEY = 'pdfReader_notify_lastDaily';
   const CHECK_INTERVAL = 30 * 1000;
-  const WINDOW_MS = 3600000; // 1h — cửa sổ cho phép bắn mốc
+  const WINDOW_MS = 3600000;
 
   const DEFAULT_SETTINGS = {
-    dailyEnabled: false,
-    dailyHour: 7,
-    dailyMinute: 0,
-    contentTasks: true,
-    contentOverdue: true,
-    contentExams: true
+    dailyEnabled: false, dailyHour: 7, dailyMinute: 0,
+    contentTasks: true, contentOverdue: true, contentExams: true
   };
 
-  const TASK_DEFAULT = { enabled: true, before: [1440, 60, 30] };
-  const EXAM_DEFAULT = { enabled: true, before: [10080, 1440, 60] };
+  const TASK_DEFAULT = {
+    enabled: true, mode: 'milestones', before: [1440, 60, 30],
+    dailyHour: 7, dailyMinute: 0, dailyFrom: 0
+  };
+  const EXAM_DEFAULT = {
+    enabled: true, mode: 'milestones', before: [10080, 1440, 60],
+    dailyHour: 7, dailyMinute: 0, dailyFrom: 0
+  };
 
   let settings = Object.assign({}, DEFAULT_SETTINGS);
   let checkTimer = null;
   let swRegistration = null;
 
-  /* ---------- STORAGE ---------- */
   function readJSON(key, fallback) {
     try {
       const v = localStorage.getItem(key);
@@ -65,9 +64,17 @@
   function wasSent(k) { return !!getSent()[k]; }
   function markSent(k) { const o = getSent(); o[k] = Date.now(); saveSent(o); }
 
+  function resetSentForItem(id, type) {
+    const o = getSent();
+    const prefix = (type === 'task') ? `task_${id}_` : `exam_${id}_`;
+    let changed = false;
+    for (const k in o) if (k.startsWith(prefix)) { delete o[k]; changed = true; }
+    if (changed) saveSent(o);
+  }
+  function resetAllSent() { saveSent({}); }
+
   function toast(msg) { if (window.App && window.App.toast) window.App.toast(msg); }
 
-  /* ---------- PERMISSION ---------- */
   async function ensurePermission() {
     if (!('Notification' in window)) return 'unsupported';
     if (Notification.permission === 'granted') return 'granted';
@@ -76,7 +83,6 @@
     catch (_) { return 'denied'; }
   }
 
-  /* ---------- SHOW ---------- */
   async function showNotify(title, body, opts) {
     if (!isEnabled()) return;
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -99,7 +105,6 @@
     } catch (_) { try { new Notification(title, options); } catch (__) {} }
   }
 
-  /* ---------- HELPERS ---------- */
   function formatOffset(mins) {
     if (mins >= 1440 && mins % 1440 === 0) return `còn ${mins / 1440} ngày`;
     if (mins >= 60 && mins % 60 === 0) return `còn ${mins / 60} giờ`;
@@ -107,39 +112,70 @@
   }
 
   function normalizeTaskNotify(nf) {
-    if (!nf || typeof nf !== 'object') return Object.assign({}, TASK_DEFAULT);
+    const def = TASK_DEFAULT;
+    if (!nf || typeof nf !== 'object') {
+      return { enabled: true, mode: 'milestones', before: def.before.slice(), dailyHour: 7, dailyMinute: 0, dailyFrom: 0 };
+    }
     const enabled = nf.enabled !== false;
+    const mode = (nf.mode === 'daily') ? 'daily' : 'milestones';
     let before = Array.isArray(nf.before) ? nf.before.slice() : [];
-    if (enabled && before.length === 0) before = TASK_DEFAULT.before.slice();
-    return { enabled, before };
+    if (enabled && mode === 'milestones' && before.length === 0) before = def.before.slice();
+    return {
+      enabled, mode, before,
+      dailyHour: Number.isFinite(nf.dailyHour) ? nf.dailyHour : 7,
+      dailyMinute: Number.isFinite(nf.dailyMinute) ? nf.dailyMinute : 0,
+      dailyFrom: Number.isFinite(nf.dailyFrom) ? nf.dailyFrom : 0
+    };
   }
   function normalizeExamNotify(nf) {
-    if (!nf || typeof nf !== 'object') return Object.assign({}, EXAM_DEFAULT);
+    const def = EXAM_DEFAULT;
+    if (!nf || typeof nf !== 'object') {
+      return { enabled: true, mode: 'milestones', before: def.before.slice(), dailyHour: 7, dailyMinute: 0, dailyFrom: 0 };
+    }
     const enabled = nf.enabled !== false;
+    const mode = (nf.mode === 'daily') ? 'daily' : 'milestones';
     let before = Array.isArray(nf.before) ? nf.before.slice() : [];
-    if (enabled && before.length === 0) before = EXAM_DEFAULT.before.slice();
-    return { enabled, before };
+    if (enabled && mode === 'milestones' && before.length === 0) before = def.before.slice();
+    return {
+      enabled, mode, before,
+      dailyHour: Number.isFinite(nf.dailyHour) ? nf.dailyHour : 7,
+      dailyMinute: Number.isFinite(nf.dailyMinute) ? nf.dailyMinute : 0,
+      dailyFrom: Number.isFinite(nf.dailyFrom) ? nf.dailyFrom : 0
+    };
   }
 
-  /* ---------- CHECK TASKS ---------- */
+  function todayDateKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+  }
+  function isAfterTargetTime(hour, minute) {
+    const now = new Date();
+    return (now.getHours() * 60 + now.getMinutes()) >= (hour * 60 + minute);
+  }
+  function daysUntil(target) {
+    const diff = target - Date.now();
+    if (diff <= 0) return 0;
+    return Math.ceil(diff / 86400000);
+  }
+
   function checkTasks() {
     const tasks = readJSON('pdfReader_todos_v1', []);
     if (!Array.isArray(tasks)) return;
     const now = Date.now();
+    const dateKey = todayDateKey();
 
     for (const t of tasks) {
       if (t.done || !t.deadline) continue;
-
       const nf = normalizeTaskNotify(t.notify);
       if (!nf.enabled) continue;
 
       const dl = new Date(t.deadline).getTime();
       if (isNaN(dl)) continue;
       const diff = dl - now;
+      const dlHash = String(dl);
 
-      /* Overdue: bắn 1 lần khi vừa quá hạn < 1h */
       if (diff < 0 && diff > -WINDOW_MS) {
-        const k = `task_${t.id}_overdue`;
+        const k = `task_${t.id}_${dlHash}_overdue`;
         if (!wasSent(k)) {
           markSent(k);
           showNotify('🚨 ' + t.title, 'Đã quá hạn!', {
@@ -148,28 +184,42 @@
         }
       }
 
-      /* Các mốc */
-      for (const mins of nf.before) {
-        const targetMs = mins * 60000;
-        const k = `task_${t.id}_${mins}`;
+      if (diff <= 0) continue;
+
+      if (nf.mode === 'daily') {
+        const daysLeft = daysUntil(dl);
+        if (nf.dailyFrom > 0 && daysLeft > nf.dailyFrom) continue;
+        if (!isAfterTargetTime(nf.dailyHour, nf.dailyMinute)) continue;
+        const k = `task_${t.id}_${dlHash}_daily_${dateKey}`;
         if (wasSent(k)) continue;
-        if (diff <= targetMs && diff > targetMs - WINDOW_MS) {
-          markSent(k);
-          showNotify(
-            '📋 ' + t.title,
-            `Deadline ${formatOffset(mins)}` + (t.subject ? ` • ${t.subject}` : ''),
-            { tag: `task_${t.id}`, data: { url: './#/todo' } }
-          );
+        markSent(k);
+        const body = daysLeft <= 0 ? `Deadline hôm nay!` : `Còn ${daysLeft} ngày nữa đến hạn`;
+        showNotify('📋 ' + t.title, body + (t.subject ? ` • ${t.subject}` : ''), {
+          tag: `task_${t.id}`, data: { url: './#/todo' }
+        });
+      } else {
+        for (const mins of nf.before) {
+          const targetMs = mins * 60000;
+          const k = `task_${t.id}_${dlHash}_${mins}`;
+          if (wasSent(k)) continue;
+          if (diff <= targetMs && diff > targetMs - WINDOW_MS) {
+            markSent(k);
+            showNotify(
+              '📋 ' + t.title,
+              `Deadline ${formatOffset(mins)}` + (t.subject ? ` • ${t.subject}` : ''),
+              { tag: `task_${t.id}`, data: { url: './#/todo' } }
+            );
+          }
         }
       }
     }
   }
 
-  /* ---------- CHECK EXAMS ---------- */
   function checkExams() {
     const exams = readJSON('pdfReader_exams_v1', []);
     if (!Array.isArray(exams)) return;
     const now = Date.now();
+    const dateKey = todayDateKey();
 
     for (const e of exams) {
       const nf = normalizeExamNotify(e.notify);
@@ -178,25 +228,38 @@
       const dl = new Date(e.datetime).getTime();
       if (isNaN(dl)) continue;
       const diff = dl - now;
-      if (diff < 0) continue;
+      if (diff <= 0) continue;
+      const dlHash = String(dl);
 
-      for (const mins of nf.before) {
-        const targetMs = mins * 60000;
-        const k = `exam_${e.id}_${mins}`;
+      if (nf.mode === 'daily') {
+        const daysLeft = daysUntil(dl);
+        if (nf.dailyFrom > 0 && daysLeft > nf.dailyFrom) continue;
+        if (!isAfterTargetTime(nf.dailyHour, nf.dailyMinute)) continue;
+        const k = `exam_${e.id}_${dlHash}_daily_${dateKey}`;
         if (wasSent(k)) continue;
-        if (diff <= targetMs && diff > targetMs - WINDOW_MS) {
-          markSent(k);
-          showNotify(
-            '⏳ ' + e.name,
-            `Kì thi ${formatOffset(mins)}` + (e.subject ? ` • ${e.subject}` : '') + (e.location ? ` • ${e.location}` : ''),
-            { tag: `exam_${e.id}`, data: { url: './#/exam' } }
-          );
+        markSent(k);
+        const body = daysLeft <= 0 ? `Kì thi hôm nay!` : `Còn ${daysLeft} ngày nữa là thi`;
+        showNotify('⏳ ' + e.name, body + (e.subject ? ` • ${e.subject}` : '') + (e.location ? ` • ${e.location}` : ''), {
+          tag: `exam_${e.id}`, data: { url: './#/exam' }
+        });
+      } else {
+        for (const mins of nf.before) {
+          const targetMs = mins * 60000;
+          const k = `exam_${e.id}_${dlHash}_${mins}`;
+          if (wasSent(k)) continue;
+          if (diff <= targetMs && diff > targetMs - WINDOW_MS) {
+            markSent(k);
+            showNotify(
+              '⏳ ' + e.name,
+              `Kì thi ${formatOffset(mins)}` + (e.subject ? ` • ${e.subject}` : '') + (e.location ? ` • ${e.location}` : ''),
+              { tag: `exam_${e.id}`, data: { url: './#/exam' } }
+            );
+          }
         }
       }
     }
   }
 
-  /* ---------- DAILY ---------- */
   function sameDay(a, b) {
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
@@ -260,7 +323,6 @@
     if (checkTimer) { clearInterval(checkTimer); checkTimer = null; }
   }
 
-  /* ---------- SIDEBAR UI ---------- */
   function updateUI() {
     const btn = document.getElementById('notifyToggle');
     if (!btn) return;
@@ -273,7 +335,6 @@
     btn.classList.toggle('on', on);
   }
 
-  /* ---------- SETTINGS MODAL ---------- */
   function refreshSettingsUI() {
     const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
     const permEl = document.getElementById('nfPermStatus');
@@ -300,9 +361,7 @@
 
     const timeEl = document.getElementById('nfDailyTime');
     if (timeEl) {
-      const hh = String(settings.dailyHour).padStart(2, '0');
-      const mm = String(settings.dailyMinute).padStart(2, '0');
-      timeEl.value = `${hh}:${mm}`;
+      timeEl.value = `${String(settings.dailyHour).padStart(2, '0')}:${String(settings.dailyMinute).padStart(2, '0')}`;
     }
     const timeRow = document.getElementById('nfTimeRow');
     if (timeRow) timeRow.style.display = settings.dailyEnabled ? '' : 'none';
@@ -379,7 +438,6 @@
     if (btn) btn.addEventListener('click', openSettings);
   }
 
-  /* ---------- INIT ---------- */
   async function init() {
     loadSettings();
     if ('serviceWorker' in navigator) {
@@ -405,5 +463,9 @@
     }
   }
 
-  window.Notify = { init, isEnabled, checkAll, show: showNotify, openSettings, closeSettings };
+  window.Notify = {
+    init, isEnabled, checkAll, show: showNotify,
+    openSettings, closeSettings,
+    resetSentForItem, resetAllSent
+  };
 })();

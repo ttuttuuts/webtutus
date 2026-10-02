@@ -290,6 +290,7 @@
       if (act.dataset.act === 'del') {
         if (!confirm(`Xoá kì thi "${exam.name}"?`)) return;
         exams = exams.filter(x => x.id !== id);
+        window.Notify && window.Notify.resetSentForItem && window.Notify.resetSentForItem(id, 'exam');
         save(); refresh();
         window.App && window.App.toast && window.App.toast('🗑️ Đã xoá');
       } else if (act.dataset.act === 'edit') openModal(exam);
@@ -330,7 +331,11 @@
       };
       if (editingId) {
         const t = exams.find(x => x.id === editingId);
-        if (t) { Object.assign(t, data); t.updatedAt = Date.now(); }
+        if (t) {
+          Object.assign(t, data);
+          t.updatedAt = Date.now();
+          window.Notify && window.Notify.resetSentForItem && window.Notify.resetSentForItem(t.id, 'exam');
+        }
         window.App && window.App.toast && window.App.toast('✏️ Đã cập nhật');
       } else {
         exams.push({ id: uid(), ...data, createdAt: Date.now() });
