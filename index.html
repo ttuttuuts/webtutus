@@ -729,7 +729,7 @@ body.dark .nf-perm-status{color:#fcd34d}
 body.dark .nf-perm-row.ok .nf-perm-status{color:#86efac}
 
 /* ============================================================
-   NOTIFY BLOCK (dùng chung cho todo & exam — per-item)
+   NOTIFY BLOCK — Tab mode (milestones / daily)
    ============================================================ */
 .nf-block{
   border:1.5px solid var(--line);
@@ -745,58 +745,93 @@ body.dark .nf-perm-row.ok .nf-perm-status{color:#86efac}
 .nf-block-title{
   font-size:12.5px;font-weight:750;color:#1e293b;
 }
+.nf-mode-tabs{
+  display:flex;gap:4px;padding:3px;
+  background:#fff;border:1.5px solid var(--line);
+  border-radius:10px;margin-bottom:10px;
+}
+.nf-mode-tab{
+  flex:1;padding:7px 10px;border:none;
+  background:transparent;border-radius:7px;
+  font-family:inherit;font-size:12px;font-weight:750;
+  color:#64748b;cursor:pointer;
+  transition:all .2s ease;white-space:nowrap;
+}
+.nf-mode-tab:hover{color:var(--blue-deep);background:#f0f6ff}
+.nf-mode-tab.active{
+  background:linear-gradient(135deg,var(--blue-2),var(--blue));
+  color:#fff;box-shadow:0 4px 10px -4px rgba(37,99,235,.7);
+}
 .nf-block-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:6px;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
   transition:opacity .2s;
 }
-.nf-block.off .nf-block-grid{
-  opacity:.35;
-  pointer-events:none;
-}
+.nf-block.off .nf-block-grid,
+.nf-block.off .nf-mode-daily{opacity:.35;pointer-events:none}
+.nf-block.off .nf-mode-tabs{opacity:.5;pointer-events:none}
 .nf-block-item{
   display:flex;align-items:center;gap:6px;
-  padding:7px 9px;
-  border-radius:8px;
-  background:#fff;
-  border:1.5px solid #e6eefa;
-  font-size:11.5px;font-weight:700;
-  color:#334155;
-  cursor:pointer;
-  transition:all .15s;
-  user-select:none;
+  padding:7px 9px;border-radius:8px;
+  background:#fff;border:1.5px solid #e6eefa;
+  font-size:11.5px;font-weight:700;color:#334155;
+  cursor:pointer;transition:all .15s;user-select:none;
 }
-.nf-block-item:hover{
-  border-color:var(--blue-2);
-  background:#f0f6ff;
-}
+.nf-block-item:hover{border-color:var(--blue-2);background:#f0f6ff}
 .nf-block-item input{
-  width:14px;height:14px;
-  accent-color:var(--blue);
-  flex:none;
-  cursor:pointer;
+  width:14px;height:14px;accent-color:var(--blue);
+  flex:none;cursor:pointer;
 }
-.nf-block-item input:checked + span{
-  color:var(--blue-deep);
-  font-weight:800;
+.nf-block-item input:checked + span{color:var(--blue-deep);font-weight:800}
+.nf-mode-daily{
+  display:flex;flex-direction:column;gap:10px;
+  transition:opacity .2s;
 }
-
+.nf-daily-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 12px;background:#fff;
+  border:1.5px solid #e6eefa;border-radius:10px;
+}
+.nf-daily-label{flex:1;min-width:0}
+.nf-daily-title{font-size:12.5px;font-weight:750;color:#1e293b}
+.nf-daily-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4}
+.nf-daily-hint{
+  font-size:11px;color:#7c3aed;font-weight:650;
+  padding:8px 10px;background:rgba(139,92,246,.08);
+  border-radius:8px;border:1px dashed rgba(139,92,246,.35);
+  line-height:1.45;
+}
+.nf-select{
+  padding:7px 10px;border:1.5px solid #c7d9fd;
+  border-radius:9px;font-family:inherit;font-size:12.5px;
+  font-weight:700;color:var(--blue-deep);background:#fff;
+  outline:none;cursor:pointer;flex:none;min-width:120px;
+}
+.nf-select:focus{border-color:var(--blue-2);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.nf-time{
+  padding:7px 10px;border:1.5px solid #c7d9fd;
+  border-radius:9px;font-family:inherit;font-size:13px;
+  font-weight:700;color:var(--blue-deep);background:#fff;
+  outline:none;cursor:pointer;flex:none;width:auto;min-width:100px;
+}
+.nf-time:focus{border-color:var(--blue-2);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
 .notify-badge{
   display:inline-flex;align-items:center;gap:3px;
   font-size:10.5px;font-weight:750;
   padding:2px 8px;border-radius:99px;
-  background:#fef3c7;color:#92400e;
-  letter-spacing:.2px;
+  background:#fef3c7;color:#92400e;letter-spacing:.2px;
 }
-.notify-badge.off{
-  background:#f1f5f9;color:#94a3b8;
-}
-
+.notify-badge.off{background:#f1f5f9;color:#94a3b8}
 body.dark .nf-block{background:linear-gradient(180deg,#111c30,#0d1728);border-color:#293548}
 body.dark .nf-block-title{color:#e2e8f0}
+body.dark .nf-mode-tabs{background:#0b1220;border-color:#293548}
+body.dark .nf-mode-tab{color:#94a3b8}
+body.dark .nf-mode-tab:hover{background:#111c30;color:#93c5fd}
 body.dark .nf-block-item{background:#0b1220;border-color:#293548;color:#cbd5e1}
 body.dark .nf-block-item:hover{background:#111c30;border-color:#3b82f6}
+body.dark .nf-daily-row{background:#0b1220;border-color:#293548}
+body.dark .nf-daily-title{color:#e2e8f0}
+body.dark .nf-select,body.dark .nf-time{background:#0b1220;border-color:#293548;color:#93c5fd}
+body.dark .nf-daily-hint{background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.5);color:#c4b5fd}
 body.dark .notify-badge{background:#422006;color:#fbbf24}
 body.dark .notify-badge.off{background:#1e293b;color:#64748b}
 </style>
@@ -1118,7 +1153,6 @@ body.dark .notify-badge.off{background:#1e293b;color:#64748b}
 <!-- CALCULATOR IFRAME -->
 <iframe class="calc-frame" id="calcFrame" src="calculator.html" title="Máy tính fx-580VN X"></iframe>
 <button class="calc-fab" id="calcFab" title="Mở máy tính fx-580VN X">🧮</button>
-
 <!-- ============ SCRIPTS ============ -->
 <script defer src="js/core.js"></script>
 <script defer src="js/pdf.js"></script>

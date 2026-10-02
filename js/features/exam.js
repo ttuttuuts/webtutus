@@ -5,7 +5,14 @@
 
   const STORAGE_KEY = 'pdfReader_exams_v1';
   const SUBJECTS = ['Toán', 'Lý', 'Hoá', 'Anh', 'Văn', 'Sử', 'Địa', 'Sinh', 'Khác'];
-  const DEFAULT_NOTIFY = { enabled: true, before: [10080, 1440, 60] };
+  const DEFAULT_NOTIFY = {
+    enabled: true,
+    mode: 'milestones',
+    before: [10080, 1440, 60],
+    dailyHour: 7,
+    dailyMinute: 0,
+    dailyFrom: 0
+  };
   const OFFSET_OPTIONS = [
     { mins: 20160, label: '2 tuần' },
     { mins: 10080, label: '1 tuần' },
@@ -28,10 +35,14 @@
       if (!Array.isArray(exams)) exams = [];
     } catch (_) { exams = []; }
     exams.forEach(e => {
-      if (!e.notify) e.notify = { enabled: true, before: DEFAULT_NOTIFY.before.slice() };
+      if (!e.notify) e.notify = Object.assign({}, DEFAULT_NOTIFY, { before: DEFAULT_NOTIFY.before.slice() });
       else {
         if (!Array.isArray(e.notify.before)) e.notify.before = DEFAULT_NOTIFY.before.slice();
         if (typeof e.notify.enabled !== 'boolean') e.notify.enabled = true;
+        if (e.notify.mode !== 'daily') e.notify.mode = 'milestones';
+        if (!Number.isFinite(e.notify.dailyHour)) e.notify.dailyHour = 7;
+        if (!Number.isFinite(e.notify.dailyMinute)) e.notify.dailyMinute = 0;
+        if (!Number.isFinite(e.notify.dailyFrom)) e.notify.dailyFrom = 0;
       }
     });
   }
@@ -53,10 +64,17 @@
     };
   }
 
+  /* ⭐ Format mới: "Ngày 11 tháng 12 năm 2026 • 07:00" */
   function formatDateVN(ts) {
     const d = new Date(ts);
-    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-    return `${days[d.getDay()]}, ${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} • ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    const days = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    const thu = days[d.getDay()];
+    const ngay = d.getDate();
+    const thang = d.getMonth() + 1;
+    const nam = d.getFullYear();
+    const gio = pad2(d.getHours());
+    const phut = pad2(d.getMinutes());
+    return `${thu}, ngày ${ngay} tháng ${thang} năm ${nam} • ${gio}:${phut}`;
   }
 
   function renderExamCard(exam, isNext) {
@@ -74,9 +92,14 @@
     else if (!rem.done && rem.days <= 7) cls += ' urgent';
 
     const nf = exam.notify || DEFAULT_NOTIFY;
-    const notifyBadge = nf.enabled
-      ? `<span class="notify-badge">🔔 ${nf.before.length} mốc</span>`
-      : `<span class="notify-badge off">🔕 Tắt</span>`;
+    let notifyBadge;
+    if (!nf.enabled) {
+      notifyBadge = `<span class="notify-badge off">🔕 Tắt</span>`;
+    } else if (nf.mode === 'daily') {
+      notifyBadge = `<span class="notify-badge">🔔 Hàng ngày ${pad2(nf.dailyHour || 7)}:${pad2(nf.dailyMinute || 0)}</span>`;
+    } else {
+      notifyBadge = `<span class="notify-badge">🔔 ${(nf.before || []).length} mốc</span>`;
+    }
 
     const timeHtml = rem.done
       ? `<div class="ex-done-badge">✅ Đã thi xong</div>`
@@ -139,6 +162,66 @@
     return html;
   }
 
+  /* ---------- NOTIFY BLOCK HTML ---------- */
+  function notifyBlockHtml(prefix, exam) {
+    const nf = exam ? (exam.notify || DEFAULT_NOTIFY) : DEFAULT_NOTIFY;
+    const isDaily = nf.mode === 'daily';
+    const hh = pad2(nf.dailyHour ?? 7);
+    const mm = pad2(nf.dailyMinute ?? 0);
+    return `
+      <div class="nf-block" id="${prefix}NotifyBlock">
+        <div class="nf-block-head">
+          <div class="nf-block-title">Bật thông báo</div>
+          <label class="nf-switch">
+            <input type="checkbox" id="${prefix}InpNotifyEnabled"${nf.enabled !== false ? ' checked' : ''}>
+            <span></span>
+          </label>
+        </div>
+
+        <div class="nf-mode-tabs" role="tablist">
+          <button type="button" class="nf-mode-tab${!isDaily ? ' active' : ''}" data-mode="milestones">🎯 Mốc cố định</button>
+          <button type="button" class="nf-mode-tab${isDaily ? ' active' : ''}" data-mode="daily">📅 Hàng ngày</button>
+        </div>
+
+        <div class="nf-mode-pane nf-mode-milestones" style="${isDaily ? 'display:none' : ''}">
+          <div class="nf-block-grid">
+            ${OFFSET_OPTIONS.map(o => `
+              <label class="nf-block-item">
+                <input type="checkbox" data-offset="${o.mins}"${(nf.before || []).includes(o.mins) ? ' checked' : ''}>
+                <span>${o.label}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="nf-mode-pane nf-mode-daily" style="${isDaily ? '' : 'display:none'}">
+          <div class="nf-daily-row">
+            <div class="nf-daily-label">
+              <div class="nf-daily-title">⏰ Giờ nhắc mỗi ngày</div>
+              <div class="nf-daily-desc">Thông báo sẽ bắn vào giờ này mỗi ngày</div>
+            </div>
+            <input type="time" class="nf-time" id="${prefix}InpDailyTime" value="${hh}:${mm}">
+          </div>
+          <div class="nf-daily-row">
+            <div class="nf-daily-label">
+              <div class="nf-daily-title">📆 Bắt đầu nhắc trước</div>
+              <div class="nf-daily-desc">Chỉ nhắc khi còn ít hơn số ngày này</div>
+            </div>
+            <select class="nf-select" id="${prefix}InpDailyFrom">
+              <option value="0"${(nf.dailyFrom ?? 0) === 0 ? ' selected' : ''}>Từ bây giờ</option>
+              <option value="3"${(nf.dailyFrom ?? 0) === 3 ? ' selected' : ''}>3 ngày cuối</option>
+              <option value="7"${(nf.dailyFrom ?? 0) === 7 ? ' selected' : ''}>7 ngày cuối</option>
+              <option value="14"${(nf.dailyFrom ?? 0) === 14 ? ' selected' : ''}>14 ngày cuối</option>
+              <option value="30"${(nf.dailyFrom ?? 0) === 30 ? ' selected' : ''}>30 ngày cuối</option>
+              <option value="60"${(nf.dailyFrom ?? 0) === 60 ? ' selected' : ''}>60 ngày cuối</option>
+              <option value="90"${(nf.dailyFrom ?? 0) === 90 ? ' selected' : ''}>90 ngày cuối</option>
+            </select>
+          </div>
+          <div class="nf-daily-hint">💡 Ví dụ: chọn 7 ngày cuối → mỗi sáng sẽ nhận "Còn X ngày nữa là thi"</div>
+        </div>
+      </div>`;
+  }
+
   function render(mount) {
     load();
     mount.innerHTML = `
@@ -180,23 +263,7 @@
             </div>
             <div class="ex-field">
               <label>🔔 Nhắc nhở cho kì thi này</label>
-              <div class="nf-block" id="exNotifyBlock">
-                <div class="nf-block-head">
-                  <div class="nf-block-title">Bật thông báo</div>
-                  <label class="nf-switch">
-                    <input type="checkbox" id="exInpNotifyEnabled">
-                    <span></span>
-                  </label>
-                </div>
-                <div class="nf-block-grid" id="exNotifyGrid">
-                  ${OFFSET_OPTIONS.map(o => `
-                    <label class="nf-block-item">
-                      <input type="checkbox" data-offset="${o.mins}">
-                      <span>${o.label}</span>
-                    </label>
-                  `).join('')}
-                </div>
-              </div>
+              <div id="exNotifyMount"></div>
             </div>
             <div class="ex-field">
               <label>Ghi chú</label>
@@ -213,13 +280,34 @@
 
     const modalEl = mount.querySelector('#exModal');
     const listEl = mount.querySelector('#exList');
-    const nfBlock = mount.querySelector('#exNotifyBlock');
-    const nfEnabled = mount.querySelector('#exInpNotifyEnabled');
+    const nfMount = mount.querySelector('#exNotifyMount');
 
-    function updateNotifyUI() { nfBlock.classList.toggle('off', !nfEnabled.checked); }
-    nfEnabled.addEventListener('change', updateNotifyUI);
+    let currentMode = 'milestones';
 
     function refresh() { listEl.innerHTML = renderList(); }
+
+    function bindNotifyBlock(mode) {
+      currentMode = mode;
+      const nfBlock = nfMount.querySelector('#exNotifyBlock');
+      if (!nfBlock) return;
+
+      const nfEnabled = nfBlock.querySelector('#exInpNotifyEnabled');
+      nfEnabled.addEventListener('change', () => {
+        nfBlock.classList.toggle('off', !nfEnabled.checked);
+      });
+      nfBlock.classList.toggle('off', !nfEnabled.checked);
+
+      nfBlock.querySelectorAll('.nf-mode-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const m = tab.dataset.mode;
+          if (m === currentMode) return;
+          currentMode = m;
+          nfBlock.querySelectorAll('.nf-mode-tab').forEach(t => t.classList.toggle('active', t === tab));
+          nfBlock.querySelector('.nf-mode-milestones').style.display = (m === 'milestones') ? '' : 'none';
+          nfBlock.querySelector('.nf-mode-daily').style.display = (m === 'daily') ? '' : 'none';
+        });
+      });
+    }
 
     function tick() {
       if (!mount.isConnected) return;
@@ -268,11 +356,8 @@
       mount.querySelector('#exInpNote').value = exam ? (exam.note || '') : '';
 
       const nf = exam ? (exam.notify || DEFAULT_NOTIFY) : DEFAULT_NOTIFY;
-      nfEnabled.checked = nf.enabled !== false;
-      mount.querySelectorAll('[data-offset]').forEach(cb => {
-        cb.checked = (nf.before || []).includes(parseInt(cb.dataset.offset, 10));
-      });
-      updateNotifyUI();
+      nfMount.innerHTML = notifyBlockHtml('ex', { notify: nf });
+      bindNotifyBlock(nf.mode || 'milestones');
 
       modalEl.classList.add('show');
       setTimeout(() => mount.querySelector('#exInpName').focus(), 100);
@@ -310,13 +395,36 @@
       if (!name) { mount.querySelector('#exInpName').focus(); window.App && window.App.toast && window.App.toast('⚠️ Nhập tên kì thi'); return; }
       if (!dt) { mount.querySelector('#exInpDatetime').focus(); window.App && window.App.toast && window.App.toast('⚠️ Chọn ngày giờ thi'); return; }
 
-      const before = Array.from(mount.querySelectorAll('[data-offset]:checked'))
-        .map(cb => parseInt(cb.dataset.offset, 10))
-        .sort((a, b) => b - a);
-      const notifyEnabledVal = nfEnabled.checked;
-      const beforeFinal = (notifyEnabledVal && before.length === 0)
-        ? DEFAULT_NOTIFY.before.slice()
-        : before;
+      const nfBlock = nfMount.querySelector('#exNotifyBlock');
+      const enabledVal = nfBlock.querySelector('#exInpNotifyEnabled').checked;
+
+      let notifyData;
+      if (currentMode === 'daily') {
+        const timeVal = nfBlock.querySelector('#exInpDailyTime').value || '07:00';
+        const [hh, mm] = timeVal.split(':');
+        const fromVal = parseInt(nfBlock.querySelector('#exInpDailyFrom').value, 10) || 0;
+        notifyData = {
+          enabled: enabledVal,
+          mode: 'daily',
+          before: [],
+          dailyHour: parseInt(hh, 10) || 7,
+          dailyMinute: parseInt(mm, 10) || 0,
+          dailyFrom: fromVal
+        };
+      } else {
+        const before = Array.from(nfBlock.querySelectorAll('[data-offset]:checked'))
+          .map(cb => parseInt(cb.dataset.offset, 10))
+          .sort((a, b) => b - a);
+        const beforeFinal = (enabledVal && before.length === 0) ? DEFAULT_NOTIFY.before.slice() : before;
+        notifyData = {
+          enabled: enabledVal,
+          mode: 'milestones',
+          before: beforeFinal,
+          dailyHour: 7,
+          dailyMinute: 0,
+          dailyFrom: 0
+        };
+      }
 
       const data = {
         name,
@@ -324,7 +432,7 @@
         location: mount.querySelector('#exInpLocation').value.trim(),
         datetime: dt,
         note: mount.querySelector('#exInpNote').value.trim(),
-        notify: { enabled: notifyEnabledVal, before: beforeFinal }
+        notify: notifyData
       };
 
       if (editingId) {
