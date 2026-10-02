@@ -7,6 +7,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     await window.PdfModule.init();
   }
 
+  /* Init Notify module (đăng ký SW + thông báo) */
+  if (window.Notify && typeof window.Notify.init === 'function') {
+    try { await window.Notify.init(); } catch (_) {}
+  }
+
   /* Hiện dashboard nếu đã login, ngược lại hiện login */
   if (sessionStorage.getItem('pdfReaderLoggedIn') === '1') {
     window.App.showApp();

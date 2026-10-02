@@ -1,0 +1,27 @@
+{
+  "name": "HoTroHocTap — Hỗ trợ học tập",
+  "short_name": "Học Tập",
+  "description": "Đọc PDF, sổ tay công thức, to-do, đếm ngược kì thi, máy tính Casio fx-580VN X",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eff4fb",
+  "theme_color": "#2563eb",
+  "lang": "vi",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -4,6 +4,15 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>HoTroHocTap — @tuttutuss</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Học Tập">
+<meta name="description" content="Hỗ trợ học tập: PDF, công thức, to-do, đếm ngược kì thi, máy tính Casio">
+<link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+<link rel="apple-touch-icon" href="icons/icon-192.svg">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
 <style>
 *{box-sizing:border-box}
@@ -65,12 +74,15 @@ body{margin:0;min-height:100vh;font-family:"Segoe UI",system-ui,-apple-system,"H
 .sb-item.soon.active .sb-soon-badge{background:#92400e;color:#fef3c7}
 
 .sb-footer{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
-.sb-theme,.sb-logout{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:#fff;font-family:inherit;font-size:13px;font-weight:650;cursor:pointer;width:100%;text-align:left}
+.sb-theme,.sb-logout,.sb-notify{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:#fff;font-family:inherit;font-size:13px;font-weight:650;cursor:pointer;width:100%;text-align:left;transition:background .2s,border-color .2s,color .2s}
 .sb-theme{border:1.5px solid #c7d9fd;color:var(--blue-deep)}
 .sb-theme:hover{background:#eff5ff;border-color:var(--blue-2)}
+.sb-notify{border:1.5px solid #c7d9fd;color:var(--blue-deep)}
+.sb-notify:hover{background:#eff5ff;border-color:var(--blue-2)}
+.sb-notify.on{background:linear-gradient(135deg,#dbeafe,#d6e9ff);border-color:var(--blue-2)}
 .sb-logout{border:1.5px solid #fecaca;color:#dc2626}
 .sb-logout:hover{background:#fef2f2;border-color:#f87171}
-.sb-theme span:first-child,.sb-logout span:first-child{font-size:15px}
+.sb-theme span:first-child,.sb-logout span:first-child,.sb-notify span:first-child{font-size:15px}
 .sb-hint{font-size:10px;color:#94a3b8;text-align:center;padding:4px 8px 0;line-height:1.5}
 .sb-hint kbd{font-family:inherit;font-size:9.5px;font-weight:800;padding:1px 5px;border-radius:4px;background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;margin:0 1px}
 
@@ -382,6 +394,9 @@ body.dark .nav-pill.soon::before{background:#fbbf24}
 body.dark .sb-soon-badge{background:linear-gradient(135deg,#422006,#78350f);color:#fbbf24}
 body.dark .sb-item.soon.active .sb-soon-badge{background:#fbbf24;color:#422006}
 body.dark .sb-theme{background:#0b1220;border-color:#293548;color:#93c5fd}
+body.dark .sb-notify{background:#0b1220;border-color:#293548;color:#93c5fd}
+body.dark .sb-notify:hover{background:#111c30}
+body.dark .sb-notify.on{background:linear-gradient(135deg,#1e3a5f,#1e40af33);border-color:#3b82f6}
 body.dark .sb-logout{background:transparent;border-color:#7f1d1d;color:#fca5a5}
 body.dark .sb-hint{color:#64748b}
 body.dark .sb-hint kbd{background:#1e293b;color:#cbd5e1;border-color:#334155}
@@ -546,15 +561,12 @@ body.dark .td-title{color:#e2e8f0}
 body.dark .td-group-title{color:#e2e8f0}
 body.dark .td-modal-close{color:#64748b}
 
-/* ============================================================
-   ĐẾM NGƯỢC KÌ THI
-   ============================================================ */
+/* ĐẾM NGƯỢC KÌ THI */
 .ex-wrap{max-width:1000px}
 .ex-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
 .ex-add-btn{display:inline-flex;align-items:center;gap:6px;padding:11px 18px;border:none;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;box-shadow:0 10px 22px -10px rgba(139,92,246,.85)}
 .ex-add-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
 .ex-hint-box{font-size:12px;color:#7b8a99;padding:9px 14px;background:rgba(139,92,246,.08);border-radius:10px;border:1px dashed rgba(139,92,246,.35);font-weight:600}
-
 .ex-group{margin-bottom:24px}
 .ex-group-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:#334155;margin:0 0 12px;padding-left:4px}
 .ex-group-title::before{content:'';width:3px;height:16px;border-radius:2px;background:linear-gradient(180deg,#8b5cf6,#a855f7)}
@@ -562,7 +574,6 @@ body.dark .td-modal-close{color:#64748b}
 .ex-group.past .ex-group-title::before{background:linear-gradient(180deg,#cbd5e1,#94a3b8)}
 .ex-group.past .ex-group-title .cnt{background:#f1f5f9;color:#64748b}
 .ex-list{display:flex;flex-direction:column;gap:12px}
-
 .ex-card{position:relative;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:16px 18px;transition:border-color .25s,box-shadow .25s,opacity .25s,background .25s}
 .ex-card.next{border-color:#8b5cf6;box-shadow:0 12px 30px -18px rgba(139,92,246,.6)}
 .ex-card.urgent{border-color:#fbbf24;box-shadow:0 12px 30px -18px rgba(217,119,6,.5)}
@@ -570,7 +581,6 @@ body.dark .td-modal-close{color:#64748b}
 @keyframes exPulse{0%,100%{box-shadow:0 12px 30px -18px rgba(239,68,68,.45)}50%{box-shadow:0 18px 42px -14px rgba(239,68,68,.8)}}
 .ex-card.done{opacity:.68;background:#f9fafb}
 .ex-card.done .ex-title{text-decoration:line-through;color:#94a3b8}
-
 .ex-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}
 .ex-title-row{flex:1;min-width:0}
 .ex-next-badge{font-size:10px;font-weight:800;letter-spacing:.3px;padding:3px 9px;border-radius:99px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;display:inline-block;margin-bottom:6px;box-shadow:0 4px 10px -4px rgba(139,92,246,.7)}
@@ -579,16 +589,13 @@ body.dark .td-modal-close{color:#64748b}
 .ex-btn{width:30px;height:30px;border:none;background:transparent;border-radius:8px;color:#94a3b8;cursor:pointer;display:grid;place-items:center;font-size:14px;padding:0;transition:all .15s}
 .ex-btn:hover{background:#f3f0ff;color:#7c3aed}
 .ex-btn.del:hover{background:#fee2e2;color:#dc2626}
-
 .ex-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .ex-tag{font-size:10.5px;font-weight:800;padding:3px 10px;border-radius:99px;background:linear-gradient(135deg,#ede9fe,#ddd6fe);color:#6d28d9;letter-spacing:.2px;text-transform:uppercase}
 .ex-when,.ex-where{font-size:12px;font-weight:650;color:#64748b}
-
 .ex-countdown{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;align-items:center;gap:6px;background:linear-gradient(180deg,#faf7ff,#f3edff);border:1.5px solid #e4dbfd;border-radius:14px;padding:14px 12px 12px;margin-bottom:12px;transition:background .3s,border-color .3s}
 .ex-card.critical .ex-countdown{background:linear-gradient(180deg,#fef5f5,#fde8e8);border-color:#fecaca}
 .ex-card.urgent .ex-countdown{background:linear-gradient(180deg,#fffbeb,#fef3c7);border-color:#fde68a}
 .ex-card.done .ex-countdown{display:none}
-
 .ex-unit{text-align:center}
 .ex-num{font-size:34px;font-weight:800;color:#7c3aed;font-family:"Consolas","Menlo",monospace;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1px;transition:color .3s}
 .ex-lbl{font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.7px;margin-top:6px}
@@ -597,9 +604,7 @@ body.dark .td-modal-close{color:#64748b}
 .ex-card.critical .ex-sep{color:#fca5a5}
 .ex-card.urgent .ex-num{color:#d97706}
 .ex-card.urgent .ex-sep{color:#fcd34d}
-
 .ex-done-badge{text-align:center;padding:14px;background:#f0fdf4;border:1.5px dashed #86efac;border-radius:14px;font-size:14px;font-weight:750;color:#059669;margin-bottom:12px}
-
 .ex-progress-wrap{margin-top:4px}
 .ex-progress{height:7px;background:#e6eefa;border-radius:99px;overflow:hidden;position:relative}
 .ex-progress-fill{height:100%;background:linear-gradient(90deg,#a78bfa,#7c3aed);border-radius:99px;transition:width .9s linear}
@@ -609,12 +614,9 @@ body.dark .td-modal-close{color:#64748b}
 .ex-progress-label b{color:#7c3aed}
 .ex-card.critical .ex-progress-label b{color:#dc2626}
 .ex-card.urgent .ex-progress-label b{color:#d97706}
-
 .ex-note{font-size:12px;color:#64748b;margin-top:10px;padding:9px 12px;background:#faf7ff;border-radius:8px;line-height:1.55;border-left:3px solid #c4b5fd}
-
 .ex-empty{text-align:center;padding:56px 20px;color:var(--muted);font-size:13.5px;line-height:1.7}
 .ex-empty .ico{font-size:52px;display:block;margin-bottom:14px;opacity:.55}
-
 .ex-modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.45);backdrop-filter:blur(4px)}
 .ex-modal.show{display:flex;animation:exFade .2s ease-out}
 @keyframes exFade{from{opacity:0}to{opacity:1}}
@@ -635,7 +637,6 @@ body.dark .td-modal-close{color:#64748b}
 .ex-modal-btn.cancel:hover{background:#f1f5f9}
 .ex-modal-btn.save{background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;box-shadow:0 8px 18px -8px rgba(139,92,246,.95)}
 .ex-modal-btn.save:hover{filter:brightness(1.08)}
-
 body.dark .ex-card{background:#0f172a;border-color:#293548}
 body.dark .ex-card.done{background:#0b1220}
 body.dark .ex-title{color:#e2e8f0}
@@ -655,6 +656,78 @@ body.dark .ex-modal-foot{background:#0b1220;border-color:#293548}
 body.dark .ex-field input,body.dark .ex-field select,body.dark .ex-field textarea{background:#0b1220;border-color:#293548;color:var(--ink)}
 body.dark .ex-tag{background:linear-gradient(135deg,#4c1d95,#6d28d9);color:#e9d5ff}
 body.dark .ex-btn:hover{background:rgba(139,92,246,.2)}
+
+/* ============================================================
+   NOTIFY SETTINGS MODAL
+   ============================================================ */
+.nf-modal{position:fixed;inset:0;z-index:250;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.5);backdrop-filter:blur(6px)}
+.nf-modal.show{display:flex;animation:nfFade .2s ease-out}
+@keyframes nfFade{from{opacity:0}to{opacity:1}}
+.nf-modal-card{width:100%;max-width:520px;max-height:92vh;background:#fff;border-radius:20px;box-shadow:0 40px 90px -40px rgba(37,99,235,.55),0 0 0 1.5px rgba(59,130,246,.55);overflow:hidden;display:flex;flex-direction:column;animation:nfPop .28s cubic-bezier(.34,1.56,.64,1)}
+@keyframes nfPop{from{opacity:0;transform:translateY(20px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+.nf-modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:linear-gradient(180deg,#f4f8ff,#e2ecff);border-bottom:1px solid var(--line);font-size:15px;font-weight:800;color:var(--blue-deep)}
+.nf-modal-close{width:30px;height:30px;border:none;background:transparent;border-radius:9px;color:#94a3b8;cursor:pointer;font-size:17px;font-weight:900;padding:0;display:grid;place-items:center;transition:all .15s}
+.nf-modal-close:hover{background:#fee2e2;color:#dc2626}
+.nf-modal-body{padding:18px 20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1}
+
+.nf-perm-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:1.5px solid #fbbf24;border-radius:14px}
+.nf-perm-row.ok{background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-color:#86efac}
+.nf-perm-text{flex:1;min-width:0}
+.nf-perm-title{font-size:13.5px;font-weight:800;color:#78350f}
+.nf-perm-row.ok .nf-perm-title{color:#166534}
+.nf-perm-status{font-size:11.5px;font-weight:650;color:#92400e;margin-top:2px}
+.nf-perm-row.ok .nf-perm-status{color:#15803d}
+.nf-perm-btn{padding:8px 18px;border:none;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;flex:none;box-shadow:0 8px 16px -8px rgba(217,119,6,.9);transition:all .15s}
+.nf-perm-btn:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px)}
+.nf-perm-btn:disabled{opacity:.5;cursor:not-allowed}
+.nf-perm-row.ok .nf-perm-btn{display:none}
+
+.nf-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;background:#fff;border:1.5px solid var(--line);border-radius:14px;transition:border-color .2s}
+.nf-row:hover{border-color:var(--blue-2)}
+.nf-row-label{flex:1;min-width:0}
+.nf-row-title{font-size:13.5px;font-weight:750;color:#1e293b}
+.nf-row-desc{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.nf-time-row{padding:12px 14px}
+.nf-time{padding:8px 12px;border:1.5px solid #c7d9fd;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;color:var(--blue-deep);background:#fff;outline:none;cursor:pointer;flex:none;width:auto;min-width:110px}
+.nf-time:focus{border-color:var(--blue-2);box-shadow:0 0 0 4px rgba(59,130,246,.15)}
+
+.nf-content-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#94a3b8;padding:6px 4px 0;margin-top:4px}
+.nf-check-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:#f8fbff;border:1.5px solid #e6eefa;font-size:13px;font-weight:650;color:#334155;cursor:pointer;transition:all .15s}
+.nf-check-row:hover{background:#eff5ff;border-color:#c7d9fd}
+.nf-check-row input{width:16px;height:16px;accent-color:var(--blue);cursor:pointer;flex:none}
+
+/* Switch toggle */
+.nf-switch{position:relative;display:inline-block;width:44px;height:26px;flex:none;cursor:pointer}
+.nf-switch input{opacity:0;width:0;height:0;position:absolute}
+.nf-switch span{position:absolute;inset:0;background:#cbd5e1;border-radius:99px;transition:background .25s;box-shadow:inset 0 1px 3px rgba(15,23,42,.15)}
+.nf-switch span::before{content:'';position:absolute;height:20px;width:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .25s cubic-bezier(.34,1.56,.64,1);box-shadow:0 2px 6px rgba(15,23,42,.25)}
+.nf-switch input:checked + span{background:linear-gradient(135deg,var(--blue-2),var(--blue))}
+.nf-switch input:checked + span::before{transform:translateX(18px)}
+.nf-switch input:focus-visible + span{box-shadow:inset 0 1px 3px rgba(15,23,42,.15),0 0 0 3px rgba(59,130,246,.3)}
+
+.nf-modal-foot{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--line);background:#f9fbff;justify-content:flex-end}
+.nf-btn{padding:10px 20px;border:none;border-radius:11px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.nf-btn.test{background:#fff;color:var(--blue-deep);border:1.5px solid #c7d9fd}
+.nf-btn.test:hover{background:#eff5ff;border-color:var(--blue-2)}
+.nf-btn.save{background:linear-gradient(135deg,var(--blue-2),var(--blue));color:#fff;box-shadow:0 10px 22px -10px rgba(37,99,235,.9)}
+.nf-btn.save:hover{filter:brightness(1.08);transform:translateY(-1px)}
+
+body.dark .nf-modal-card{background:#0f172a}
+body.dark .nf-modal-head{background:linear-gradient(180deg,#111c30,#0d1728);border-color:#293548;color:#93c5fd}
+body.dark .nf-row{background:#0b1220;border-color:#293548}
+body.dark .nf-row-title{color:#e2e8f0}
+body.dark .nf-time{background:#0b1220;border-color:#293548;color:#93c5fd}
+body.dark .nf-check-row{background:#111c30;border-color:#293548;color:#cbd5e1}
+body.dark .nf-check-row:hover{background:#1a2540}
+body.dark .nf-modal-foot{background:#0b1220;border-color:#293548}
+body.dark .nf-btn.test{background:#0b1220;border-color:#293548;color:#93c5fd}
+body.dark .nf-btn.test:hover{background:#111c30}
+body.dark .nf-perm-row{background:linear-gradient(135deg,#422006,#78350f);border-color:#a16207}
+body.dark .nf-perm-row.ok{background:linear-gradient(135deg,#052e16,#166534);border-color:#16a34a}
+body.dark .nf-perm-title{color:#fbbf24}
+body.dark .nf-perm-row.ok .nf-perm-title{color:#86efac}
+body.dark .nf-perm-status{color:#fcd34d}
+body.dark .nf-perm-row.ok .nf-perm-status{color:#86efac}
 </style>
 </head>
 <body>
@@ -706,6 +779,7 @@ body.dark .ex-btn:hover{background:rgba(139,92,246,.2)}
     </nav>
     <div class="sb-footer">
       <button class="sb-theme" id="themeToggle"><span id="themeIcon">🌙</span><span id="themeLabel">Chế độ tối</span></button>
+      <button class="sb-notify" id="notifyToggle"><span id="notifyIcon">🔕</span><span id="notifyLabel">Cài đặt thông báo</span></button>
       <button class="sb-logout" id="logoutBtn"><span>🚪</span><span>Đăng xuất</span></button>
       <div class="sb-hint"><kbd>Ctrl</kbd>+<kbd>B</kbd> menu • <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> theme • <kbd>Ctrl</kbd>+<kbd>M</kbd> calc</div>
     </div>
@@ -910,6 +984,88 @@ body.dark .ex-btn:hover{background:rgba(139,92,246,.2)}
 <div class="save-toast" id="saveToast">💾 Đã lưu</div>
 <input type="file" id="fileInput2" accept="application/pdf,.pdf" hidden />
 
+<!-- NOTIFY SETTINGS MODAL -->
+<div class="nf-modal" id="nfModal">
+  <div class="nf-modal-card">
+    <div class="nf-modal-head">
+      <span>⚙️ Cài đặt thông báo</span>
+      <button class="nf-modal-close" id="nfModalClose">✕</button>
+    </div>
+    <div class="nf-modal-body">
+
+      <div class="nf-perm-row" id="nfPermRow">
+        <div class="nf-perm-text">
+          <div class="nf-perm-title">🔐 Quyền thông báo</div>
+          <div class="nf-perm-status" id="nfPermStatus">Chưa bật</div>
+        </div>
+        <button class="nf-perm-btn" id="nfPermBtn">Bật</button>
+      </div>
+
+      <div class="nf-row">
+        <div class="nf-row-label">
+          <div class="nf-row-title">📅 Thông báo hàng ngày</div>
+          <div class="nf-row-desc">Nhắc nhở mỗi ngày vào giờ bạn chọn</div>
+        </div>
+        <label class="nf-switch">
+          <input type="checkbox" id="nfDailyEnabled">
+          <span></span>
+        </label>
+      </div>
+
+      <div class="nf-row nf-time-row" id="nfTimeRow">
+        <div class="nf-row-label">
+          <div class="nf-row-title">⏰ Giờ gửi</div>
+          <div class="nf-row-desc">Bạn sẽ nhận thông báo đầu tiên sau giờ này</div>
+        </div>
+        <input type="time" class="nf-time" id="nfDailyTime" value="07:00">
+      </div>
+
+      <div class="nf-row">
+        <div class="nf-row-label">
+          <div class="nf-row-title">📋 Nhắc deadline</div>
+          <div class="nf-row-desc">Báo trước 1 ngày / 3h / 1h / 30ph / 5ph</div>
+        </div>
+        <label class="nf-switch">
+          <input type="checkbox" id="nfTasksEnabled">
+          <span></span>
+        </label>
+      </div>
+
+      <div class="nf-row">
+        <div class="nf-row-label">
+          <div class="nf-row-title">⏳ Nhắc kì thi</div>
+          <div class="nf-row-desc">Báo trước 2 tuần / 1 tuần / 3 ngày / 1 ngày / 1 giờ</div>
+        </div>
+        <label class="nf-switch">
+          <input type="checkbox" id="nfExamsEnabled">
+          <span></span>
+        </label>
+      </div>
+
+      <div id="nfContentBlock">
+        <div class="nf-content-title">Nội dung nhắc hàng ngày</div>
+        <label class="nf-check-row">
+          <input type="checkbox" id="nfContentTasks">
+          <span>📋 Task hôm nay</span>
+        </label>
+        <label class="nf-check-row" style="margin-top:6px">
+          <input type="checkbox" id="nfContentOverdue">
+          <span>🔥 Task quá hạn</span>
+        </label>
+        <label class="nf-check-row" style="margin-top:6px">
+          <input type="checkbox" id="nfContentExams">
+          <span>⏳ Kì thi sắp tới</span>
+        </label>
+      </div>
+
+    </div>
+    <div class="nf-modal-foot">
+      <button class="nf-btn test" id="nfTestBtn">🔔 Gửi thử</button>
+      <button class="nf-btn save" id="nfSaveBtn">💾 Lưu cài đặt</button>
+    </div>
+  </div>
+</div>
+
 <!-- CALCULATOR IFRAME -->
 <iframe class="calc-frame" id="calcFrame" src="calculator.html" title="Máy tính fx-580VN X"></iframe>
 <button class="calc-fab" id="calcFab" title="Mở máy tính fx-580VN X">🧮</button>
@@ -918,6 +1074,7 @@ body.dark .ex-btn:hover{background:rgba(139,92,246,.2)}
 <script defer src="js/core.js"></script>
 <script defer src="js/pdf.js"></script>
 <script defer src="js/formulas.js"></script>
+<script defer src="js/notify.js"></script>
 <script defer src="js/features/notes.js"></script>
 <script defer src="js/features/flashcard.js"></script>
 <script defer src="js/features/pomodoro.js"></script>
