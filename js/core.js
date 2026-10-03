@@ -57,6 +57,7 @@
     'home': { page: 'home', title: 'Trang chủ' },
     'pdf': { page: 'reader', title: 'Đọc PDF' },
     'reader': { page: 'reader', title: 'Đọc PDF' },
+    'convert': { page: 'feature', title: 'Chuyển file → PDF', icon: '📄', desc: 'Đổi ảnh, text, docx… sang PDF.' },
     'formulas': { page: 'formula', title: 'Sổ tay công thức' },
     'notes': { page: 'feature', title: 'Sổ tay ghi chú', icon: '📝', desc: 'Ghi chú cho từng file PDF.' },
     'flashcard': { page: 'feature', title: 'Flashcard & SRS', icon: '🃏', desc: 'Ôn tập theo lịch 1-3-7-15 ngày.' },
