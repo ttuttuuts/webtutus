@@ -84,25 +84,44 @@
   }
 
   async function showNotify(title, body, opts) {
-    if (!isEnabled()) return;
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (!isEnabled()) { console.log('[Notify] Skip — disabled'); return false; }
+    if (!('Notification' in window)) { console.log('[Notify] Skip — unsupported'); return false; }
+    if (Notification.permission !== 'granted') { console.log('[Notify] Skip — no perm'); return false; }
 
     const options = Object.assign({
       body: body || '',
       icon: 'icons/icon-192.svg',
       badge: 'icons/icon-192.svg',
       tag: 'hoctrohoctap',
+      renotify: true,
       requireInteraction: false,
+      silent: false,
       data: { url: './#/home' }
     }, opts || {});
 
-    try {
-      if (swRegistration) await swRegistration.showNotification(title, options);
-      else {
+    console.log('[Notify] Show:', title, options);
+    let success = false;
+
+    if (swRegistration) {
+      try {
+        await swRegistration.showNotification(title, options);
+        success = true;
+      } catch (err) {
+        console.warn('[Notify] SW failed:', err);
+      }
+    }
+
+    if (!success) {
+      try {
         const n = new Notification(title, options);
         n.onclick = () => { window.focus(); n.close(); };
+        success = true;
+      } catch (err) {
+        console.warn('[Notify] new Notification failed:', err);
       }
-    } catch (_) { try { new Notification(title, options); } catch (__) {} }
+    }
+
+    return success;
   }
 
   function formatOffset(mins) {
@@ -179,7 +198,9 @@
         if (!wasSent(k)) {
           markSent(k);
           showNotify('🚨 ' + t.title, 'Đã quá hạn!', {
-            tag: `task_${t.id}`, requireInteraction: true, data: { url: './#/todo' }
+            tag: `task_${t.id}_overdue`,
+            requireInteraction: true,
+            data: { url: './#/todo' }
           });
         }
       }
@@ -195,7 +216,8 @@
         markSent(k);
         const body = daysLeft <= 0 ? `Deadline hôm nay!` : `Còn ${daysLeft} ngày nữa đến hạn`;
         showNotify('📋 ' + t.title, body + (t.subject ? ` • ${t.subject}` : ''), {
-          tag: `task_${t.id}`, data: { url: './#/todo' }
+          tag: `task_${t.id}_daily_${dateKey}`,
+          data: { url: './#/todo' }
         });
       } else {
         for (const mins of nf.before) {
@@ -207,7 +229,7 @@
             showNotify(
               '📋 ' + t.title,
               `Deadline ${formatOffset(mins)}` + (t.subject ? ` • ${t.subject}` : ''),
-              { tag: `task_${t.id}`, data: { url: './#/todo' } }
+              { tag: `task_${t.id}_${mins}`, data: { url: './#/todo' } }
             );
           }
         }
@@ -240,7 +262,8 @@
         markSent(k);
         const body = daysLeft <= 0 ? `Kì thi hôm nay!` : `Còn ${daysLeft} ngày nữa là thi`;
         showNotify('⏳ ' + e.name, body + (e.subject ? ` • ${e.subject}` : '') + (e.location ? ` • ${e.location}` : ''), {
-          tag: `exam_${e.id}`, data: { url: './#/exam' }
+          tag: `exam_${e.id}_daily_${dateKey}`,
+          data: { url: './#/exam' }
         });
       } else {
         for (const mins of nf.before) {
@@ -252,7 +275,7 @@
             showNotify(
               '⏳ ' + e.name,
               `Kì thi ${formatOffset(mins)}` + (e.subject ? ` • ${e.subject}` : '') + (e.location ? ` • ${e.location}` : ''),
-              { tag: `exam_${e.id}`, data: { url: './#/exam' } }
+              { tag: `exam_${e.id}_${mins}`, data: { url: './#/exam' } }
             );
           }
         }
@@ -303,7 +326,8 @@
     if (nowMin < targetMin) return;
 
     showNotify('📚 Nhắc học tập hôm nay', buildDailySummary(), {
-      tag: 'daily', data: { url: './#/home' }
+      tag: 'daily_' + todayKey,
+      data: { url: './#/home' }
     });
     try { localStorage.setItem(LAST_DAILY_KEY, todayKey); } catch (_) {}
   }
@@ -426,12 +450,30 @@
       closeSettings();
     });
 
+    /* ⭐ Nút GỬI THỬ — tag unique + renotify → luôn hiện mỗi lần bấm */
     document.getElementById('nfTestBtn')?.addEventListener('click', async () => {
       const p = await ensurePermission();
-      if (p !== 'granted') { toast('⚠️ Cần cấp quyền thông báo trước'); refreshSettingsUI(); return; }
+      if (p !== 'granted') {
+        toast('⚠️ Cần cấp quyền thông báo trước');
+        refreshSettingsUI();
+        return;
+      }
       if (!isEnabled()) setEnabled(true);
-      await showNotify('📚 Nhắc học tập (thử)', buildDailySummary(), { tag: 'test' });
-      toast('🔔 Đã gửi thông báo thử');
+
+      const uniqueTag = 'test_' + Date.now();
+      const ok = await showNotify(
+        '📚 Nhắc học tập (thử)',
+        buildDailySummary(),
+        {
+          tag: uniqueTag,
+          renotify: true,
+          requireInteraction: false,
+          silent: false
+        }
+      );
+
+      if (ok) toast('🔔 Đã gửi thông báo thử');
+      else toast('⚠️ Không gửi được — mở Console (F12) để xem log');
     });
 
     const btn = document.getElementById('notifyToggle');
