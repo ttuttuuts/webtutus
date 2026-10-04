@@ -1,5 +1,7 @@
 /* Feature module: Đọc văn bản (TTS)
-   Dùng Web Speech API (speechSynthesis) — chạy offline, không cần server. */
+   2 nguồn giọng:
+   1) Giọng hệ thống qua Web Speech API (speechSynthesis).
+   2) Giọng AI tiếng Việt (Piper/VITS chạy ngay trong trình duyệt, tải model 1 lần rồi dùng offline). */
 (function () {
   'use strict';
   window.Features = window.Features || {};
@@ -18,8 +20,62 @@
     total: 0,            // tổng ký tự
     dirty: false,        // đổi cài đặt lúc đang pause
     voices: [],
+    audio: null,         // <audio> đang phát (giọng AI)
     ui: null             // tham chiếu DOM của lần render hiện tại
   };
+
+  /* ---------- Giọng AI tiếng Việt (Piper) ---------- */
+  const PIPER_VER = '1.0.3';
+  const PIPER_VOICES = [
+    { id: 'piper:vais1000', voice: 'vi_VN-vais1000-medium',      sid: 0, label: 'AI · Vais1000 (chất lượng tốt nhất)' },
+    { id: 'piper:25hours',  voice: 'vi_VN-25hours_single-low',   sid: 0, label: 'AI · 25hours' }
+  ];
+  for (let n = 0; n < 8; n++) {
+    PIPER_VOICES.push({ id: 'piper:vivos' + n, voice: 'vi_VN-vivos-x_low', sid: n, label: 'AI · Vivos – giọng ' + (n + 1) });
+  }
+  const piperOf = id => PIPER_VOICES.find(v => v.id === id) || null;
+
+  let piperMod = null;
+  function loadPiper() {
+    if (!piperMod) {
+      const urls = [
+        'https://esm.sh/@diffusionstudio/vits-web@' + PIPER_VER,
+        'https://cdn.jsdelivr.net/npm/@diffusionstudio/vits-web@' + PIPER_VER + '/+esm'
+      ];
+      piperMod = import(urls[0]).catch(() => import(urls[1])).catch(e => { piperMod = null; throw e; });
+    }
+    return piperMod;
+  }
+
+  const wavCache = new Map();          // key -> Promise<objectURL>
+  let synthQueue = Promise.resolve();  // tạo giọng lần lượt, không chạy song song
+  function synthPiper(pv, text) {
+    const key = pv.id + '|' + text;
+    if (wavCache.has(key)) return wavCache.get(key);
+    const job = synthQueue.then(async () => {
+      const m = await loadPiper();
+      const wav = await m.predict(
+        { text, voiceId: pv.voice, speakerId: pv.sid },
+        p => {
+          if (st.ui && p && p.total) {
+            st.ui.progText.textContent = 'Đang tải model giọng… ' + Math.round(p.loaded * 100 / p.total) + '% (chỉ lần đầu)';
+          }
+        });
+      return URL.createObjectURL(wav);
+    });
+    synthQueue = job.catch(() => {});
+    job.catch(() => wavCache.delete(key));
+    wavCache.set(key, job);
+    return job;
+  }
+  function clearWavCache() {
+    wavCache.forEach(p => p.then(u => URL.revokeObjectURL(u)).catch(() => {}));
+    wavCache.clear();
+  }
+  function stopAudio() {
+    const a = st.audio;
+    if (a) { a.onended = a.onerror = null; a.pause(); st.audio = null; }
+  }
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -72,14 +128,17 @@
     const other = st.voices.filter(v => !/^vi/i.test(v.lang));
     const opt = v => `<option value="${escapeHtml(v.voiceURI)}">${escapeHtml(v.name)} (${escapeHtml(v.lang)})</option>`;
     let html = '';
-    if (vi.length) html += `<optgroup label="Tiếng Việt">${vi.map(opt).join('')}</optgroup>`;
+    html += `<optgroup label="Giọng AI tiếng Việt (tải model lần đầu, sau đó dùng offline)">${PIPER_VOICES.map(v =>
+      `<option value="${v.id}">${escapeHtml(v.label)}</option>`).join('')}</optgroup>`;
+    if (vi.length) html += `<optgroup label="Tiếng Việt (giọng hệ thống)">${vi.map(opt).join('')}</optgroup>`;
     if (other.length) html += `<optgroup label="Ngôn ngữ khác">${other.map(opt).join('')}</optgroup>`;
     if (!html) html = '<option value="">Giọng mặc định của trình duyệt</option>';
     ui.voice.innerHTML = html;
 
     const want = prefs.voice;
-    if (want && st.voices.some(v => v.voiceURI === want)) ui.voice.value = want;
+    if (want && (piperOf(want) || st.voices.some(v => v.voiceURI === want))) ui.voice.value = want;
     else if (vi.length) ui.voice.value = vi[0].voiceURI;
+    else ui.voice.value = PIPER_VOICES[0].id;
 
     ui.viWarn.style.display = (st.voices.length && !vi.length) ? 'block' : 'none';
   }
@@ -169,6 +228,9 @@
     st.idx = i;
     st.dirty = false;
     const my = ++st.token;
+    stopAudio();
+    const pv = piperOf(st.ui && st.ui.voice.value);
+    if (pv) { if (synth) synth.cancel(); speakPiper(i, pv, my); return; }
     const raw = st.chunks[i].text;
     const lead = raw.length - raw.trimStart().length;
     const u = new SpeechSynthesisUtterance(raw.trim());
@@ -199,8 +261,35 @@
     }
   }
 
+  function speakPiper(i, pv, my) {
+    const ui = st.ui;
+    highlight(i);
+    ui.progText.textContent = 'Đang tạo giọng…';
+    synthPiper(pv, st.chunks[i].text.trim()).then(url => {
+      if (my !== st.token) return;
+      updateProgress();
+      const a = new Audio(url);
+      a.preservesPitch = true;
+      a.playbackRate = parseFloat(ui.rate.value);
+      a.volume = parseFloat(ui.volume.value);
+      a.onended = () => { if (my === st.token) speakChunk(i + 1); };
+      a.onerror = () => { if (my !== st.token) return; toast('⚠️ Không phát được âm thanh'); stop(); };
+      st.audio = a;
+      if (st.status === 'playing') a.play().catch(() => {});
+      /* tạo sẵn câu kế tiếp để đọc liền mạch */
+      const nx = st.chunks[i + 1];
+      if (nx) synthPiper(pv, nx.text.trim()).catch(() => {});
+    }).catch(err => {
+      if (my !== st.token) return;
+      console.error(err);
+      toast('⚠️ Không tải được giọng AI (cần Internet lần đầu). Thử giọng khác nhé.');
+      stop();
+    });
+  }
+
   function finish() {
     st.token++;
+    stopAudio(); clearWavCache();
     st.idx = 0;
     setStatus('idle');
     toast('✅ Đã đọc xong');
@@ -208,14 +297,15 @@
 
   function stop() {
     st.token++;
+    stopAudio(); clearWavCache();
     if (synth) synth.cancel();
     st.idx = 0;
     setStatus('idle');
   }
 
   function start() {
-    if (!synth) { toast('Trình duyệt không hỗ trợ đọc văn bản'); return; }
     const ui = st.ui;
+    if (!synth && !piperOf(ui.voice.value)) { toast('Trình duyệt không hỗ trợ đọc văn bản'); return; }
     let text = ui.text.value;
     const a = ui.text.selectionStart, b = ui.text.selectionEnd;
     if (b > a && text.slice(a, b).trim()) text = text.slice(a, b);   // chỉ đọc phần bôi chọn
@@ -232,11 +322,14 @@
   function togglePlay() {
     if (st.status === 'idle') return start();
     if (st.status === 'playing') {
-      synth.pause();
+      if (st.audio) st.audio.pause(); else if (synth) synth.pause();
       setStatus('paused');
     } else {
       setStatus('playing');
-      if (st.dirty) speakChunk(st.idx); else synth.resume();
+      if (st.dirty) speakChunk(st.idx);
+      else if (st.audio) st.audio.play().catch(() => {});
+      else if (piperOf(st.ui.voice.value)) { /* đang tạo giọng, sẽ tự phát khi xong */ }
+      else synth.resume();
     }
   }
 
@@ -298,7 +391,7 @@
             <label for="ttsVoice">Giọng đọc</label>
             <select id="ttsVoice"><option value="">Đang tải giọng đọc…</option></select>
             <div class="tts-warn" id="ttsViWarn" style="display:none">
-              ⚠️ Máy chưa có giọng tiếng Việt. Trên Windows: Cài đặt → Thời gian &amp; ngôn ngữ → Giọng nói → thêm giọng Tiếng Việt. Chrome/Edge trên Android và Safari thường có sẵn.
+              ℹ️ Máy chưa có giọng tiếng Việt của hệ thống — bạn vẫn dùng được nhóm "Giọng AI tiếng Việt" ở trên. Muốn thêm giọng hệ thống: trên Windows: Cài đặt → Thời gian &amp; ngôn ngữ → Giọng nói → thêm giọng Tiếng Việt. Chrome/Edge trên Android và Safari thường có sẵn.
             </div>
           </div>
           <div class="tts-field">
@@ -350,8 +443,12 @@
     ui.text.addEventListener('input', () => { updateCount(); persist(); });
 
     [ui.rate, ui.pitch, ui.volume].forEach(el => {
-      el.addEventListener('input', () => { updateLabels(); persist(); });
+      el.addEventListener('input', () => {
+        updateLabels(); persist();
+        if (st.audio) { st.audio.playbackRate = parseFloat(ui.rate.value); st.audio.volume = parseFloat(ui.volume.value); }
+      });
       el.addEventListener('change', () => {          // áp dụng ngay khi thả thanh trượt
+        if (piperOf(ui.voice.value)) return;          // giọng AI đã áp dụng trực tiếp ở trên
         if (st.status === 'playing') speakChunk(st.idx);
         else if (st.status === 'paused') st.dirty = true;
       });
@@ -412,13 +509,8 @@
     updateCount();
     setStatus('idle');
 
-    if (!synth) {
-      ui.voice.innerHTML = '<option value="">Không hỗ trợ</option>';
-      ui.playBtn.disabled = true;
-      toast('Trình duyệt này không hỗ trợ đọc văn bản');
-      return;
-    }
     refreshVoices();
+    if (!synth) return;
     if (!st.voicesBound) {
       st.voicesBound = true;
       synth.addEventListener('voiceschanged', refreshVoices);
