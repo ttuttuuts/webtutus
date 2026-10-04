@@ -8,8 +8,6 @@
   const MAX_CHARS = 50000;
   const MAX_CHUNK = 180;            // Chrome hay tự ngắt utterance dài → chia nhỏ
   const synth = window.speechSynthesis || null;
-  const ONLINE = '__online_vi';     // giọng Việt online (Google Dịch) — dùng khi máy chưa có giọng Việt
-  const onlineUrl = t => 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=vi&q=' + encodeURIComponent(t);
 
   /* ---------- state ---------- */
   const st = {
@@ -20,7 +18,6 @@
     total: 0,            // tổng ký tự
     dirty: false,        // đổi cài đặt lúc đang pause
     voices: [],
-    audio: null,         // <audio> cho giọng online
     ui: null             // tham chiếu DOM của lần render hiện tại
   };
 
@@ -77,25 +74,14 @@
     let html = '';
     if (vi.length) html += `<optgroup label="Tiếng Việt">${vi.map(opt).join('')}</optgroup>`;
     if (other.length) html += `<optgroup label="Ngôn ngữ khác">${other.map(opt).join('')}</optgroup>`;
-    html += `<optgroup label="Online (cần mạng)"><option value="${ONLINE}">🌐 Tiếng Việt online (Google)</option></optgroup>`;
+    if (!html) html = '<option value="">Giọng mặc định của trình duyệt</option>';
     ui.voice.innerHTML = html;
 
     const want = prefs.voice;
-    if (want === ONLINE || (want && st.voices.some(v => v.voiceURI === want))) ui.voice.value = want;
+    if (want && st.voices.some(v => v.voiceURI === want)) ui.voice.value = want;
     else if (vi.length) ui.voice.value = vi[0].voiceURI;
-    else ui.voice.value = ONLINE;          // máy chưa có giọng Việt → dùng online
 
-    updateWarn();
-  }
-
-  function updateWarn() {
-    const ui = st.ui;
-    if (!ui) return;
-    const hasVi = st.voices.some(v => /^vi/i.test(v.lang));
-    const v = ui.voice.value;
-    ui.viWarn.style.display = (v === ONLINE) ? 'block' : 'none';
-    ui.viWarn.innerHTML = hasVi ? '' :
-      '🌐 Đang dùng giọng online (cần Internet, không tô sáng từng từ). Muốn đọc offline: Windows → Cài đặt → Giọng nói → thêm giọng Tiếng Việt.';
+    ui.viWarn.style.display = (st.voices.length && !vi.length) ? 'block' : 'none';
   }
 
   function getVoice() {
@@ -184,8 +170,6 @@
     st.dirty = false;
     const my = ++st.token;
     const raw = st.chunks[i].text;
-    if (st.ui.voice.value === ONLINE) { speakOnline(i, my, raw.trim()); return; }
-    if (st.audio) { st.audio.pause(); st.audio = null; }
     const lead = raw.length - raw.trimStart().length;
     const u = new SpeechSynthesisUtterance(raw.trim());
     const v = getVoice();
@@ -215,33 +199,7 @@
     }
   }
 
-  function speakOnline(i, my, text) {
-    if (synth) synth.cancel();
-    if (st.audio) { st.audio.pause(); st.audio.src = ''; }
-    const a = st.audio = new Audio(onlineUrl(text));
-    a.playbackRate = parseFloat(st.ui.rate.value);
-    a.volume = parseFloat(st.ui.volume.value);
-    if ('preservesPitch' in a) a.preservesPitch = true;
-    a.onended = () => { if (my === st.token) speakChunk(i + 1); };
-    a.onerror = () => {
-      if (my !== st.token) return;
-      toast('⚠️ Giọng online không tải được — kiểm tra mạng hoặc chọn giọng khác');
-      stop();
-    };
-    highlight(i);
-    a.play().catch(() => {
-      if (my !== st.token) return;
-      toast('⚠️ Trình duyệt chặn phát âm thanh — bấm Đọc lại');
-      stop();
-    });
-  }
-
-  function killAudio() {
-    if (st.audio) { st.audio.onended = st.audio.onerror = null; st.audio.pause(); st.audio.src = ''; st.audio = null; }
-  }
-
   function finish() {
-    killAudio();
     st.token++;
     st.idx = 0;
     setStatus('idle');
@@ -250,15 +208,14 @@
 
   function stop() {
     st.token++;
-    killAudio();
     if (synth) synth.cancel();
     st.idx = 0;
     setStatus('idle');
   }
 
   function start() {
+    if (!synth) { toast('Trình duyệt không hỗ trợ đọc văn bản'); return; }
     const ui = st.ui;
-    if (!synth && ui.voice.value !== ONLINE) { toast('Trình duyệt không hỗ trợ đọc văn bản'); return; }
     let text = ui.text.value;
     const a = ui.text.selectionStart, b = ui.text.selectionEnd;
     if (b > a && text.slice(a, b).trim()) text = text.slice(a, b);   // chỉ đọc phần bôi chọn
@@ -274,14 +231,12 @@
 
   function togglePlay() {
     if (st.status === 'idle') return start();
-    const online = !!st.audio;
     if (st.status === 'playing') {
-      if (online) st.audio.pause(); else synth.pause();
+      synth.pause();
       setStatus('paused');
     } else {
       setStatus('playing');
-      if (st.dirty) speakChunk(st.idx);
-      else if (online) st.audio.play(); else synth.resume();
+      if (st.dirty) speakChunk(st.idx); else synth.resume();
     }
   }
 
@@ -403,7 +358,6 @@
     });
     ui.voice.addEventListener('change', () => {
       persist();
-      updateWarn();
       if (st.status === 'playing') speakChunk(st.idx);
       else if (st.status === 'paused') st.dirty = true;
     });
@@ -459,8 +413,9 @@
     setStatus('idle');
 
     if (!synth) {
-      ui.voice.innerHTML = `<option value="${ONLINE}">🌐 Tiếng Việt online (Google)</option>`;
-      updateWarn();
+      ui.voice.innerHTML = '<option value="">Không hỗ trợ</option>';
+      ui.playBtn.disabled = true;
+      toast('Trình duyệt này không hỗ trợ đọc văn bản');
       return;
     }
     refreshVoices();
