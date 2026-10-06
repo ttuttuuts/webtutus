@@ -152,7 +152,7 @@
     const feeds = {
       input: new ort.Tensor('int64', BigInt64Array.from(ids, x => BigInt(x)), [1, ids.length]),
       input_lengths: new ort.Tensor('int64', BigInt64Array.from([BigInt(ids.length)]), [1]),
-      scales: new ort.Tensor('float32', Float32Array.from([inf.noise_scale ?? 0.667, inf.length_scale ?? 1, inf.noise_w ?? 0.8]), [3])
+      scales: new ort.Tensor('float32', Float32Array.from([inf.noise_scale ?? 0.667, (inf.length_scale ?? 1) * YOUNG, inf.noise_w ?? 0.8]), [3])
     };
     if ((cfg.num_speakers || 1) > 1) feeds.sid = new ort.Tensor('int64', BigInt64Array.from([BigInt(pv.sid || 0)]), [1]);
     const out = await session.run(feeds);
@@ -180,6 +180,7 @@
     wavCache.forEach(p => p.then(u => URL.revokeObjectURL(u)).catch(() => {}));
     wavCache.clear();
   }
+  const YOUNG = 1.1;   // giọng AI: nâng tông ~10% nhưng giữ nguyên tốc độ
   let actx = null;
   function brighten(a) {
     try {
@@ -403,8 +404,8 @@
       if (my !== st.token) return;
       updateProgress();
       const a = new Audio(url);
-      a.preservesPitch = true;
-      a.playbackRate = parseFloat(ui.rate.value);
+      a.preservesPitch = false;
+      a.playbackRate = parseFloat(ui.rate.value) * YOUNG;
       a.volume = parseFloat(ui.volume.value);
       a.onended = () => { if (my === st.token) speakChunk(i + 1); };
       a.onerror = () => { if (my !== st.token) return; toast('⚠️ Không phát được âm thanh'); stop(); };
@@ -556,12 +557,12 @@
 
     ui.text.value = typeof prefs.text === 'string' ? prefs.text : '';
     ui.rate.value = num(prefs.rate, 1);
-    ui.pitch.value = num(prefs.pitch, 1.1);
+    ui.pitch.value = num(prefs.pv === 2 ? prefs.pitch : undefined, 1.25);
     ui.volume.value = num(prefs.volume, 1);
 
     function persist() {
       savePrefs({
-        text: ui.text.value, voice: ui.voice.value,
+        pv: 2, text: ui.text.value, voice: ui.voice.value,
         rate: parseFloat(ui.rate.value), pitch: parseFloat(ui.pitch.value), volume: parseFloat(ui.volume.value)
       });
     }
@@ -580,7 +581,7 @@
     [ui.rate, ui.pitch, ui.volume].forEach(el => {
       el.addEventListener('input', () => {
         updateLabels(); persist();
-        if (st.audio) { st.audio.playbackRate = parseFloat(ui.rate.value); st.audio.volume = parseFloat(ui.volume.value); }
+        if (st.audio) { st.audio.playbackRate = parseFloat(ui.rate.value) * YOUNG; st.audio.volume = parseFloat(ui.volume.value); }
       });
       el.addEventListener('change', () => {          // áp dụng ngay khi thả thanh trượt
         if (piperOf(ui.voice.value)) return;          // giọng AI đã áp dụng trực tiếp ở trên
