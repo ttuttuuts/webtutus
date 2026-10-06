@@ -5,7 +5,7 @@
    - Click notification → focus app
    ============================================================ */
 
-const CACHE = 'hoctrohoctap-v1';
+const CACHE = 'hoctrohoctap-v2';
 const ASSETS = [
   './',
   './index.html',

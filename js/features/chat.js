@@ -20,7 +20,10 @@
     custom:     { label: 'Tự nhập (OpenAI-compatible)', kind: 'openai', base: '',                                                      model: '',                 hint: 'Nhập Base URL, ví dụ http://localhost:11434/v1 (Ollama)' }
   };
 
-  const DEFAULT_SYSTEM = 'Bạn là trợ lý học tập thân thiện trong ứng dụng HoTroHocTap. Luôn trả lời bằng tiếng Việt (trừ khi người dùng yêu cầu ngôn ngữ khác), giải thích rõ ràng, có ví dụ, ngắn gọn dễ hiểu. Khi giải bài, trình bày từng bước.';
+  const AI_NAME = 'TutuutusAI';
+  const GREETING = 'Chào bạn, chào mừng bạn đến với Tututus web! 👋\nMình là TutuutusAI, bạn cần mình giúp gì nào?';
+  const OLD_SYSTEM_PREFIX = 'Bạn là trợ lý học tập thân thiện trong ứng dụng HoTroHocTap.';
+  const DEFAULT_SYSTEM = 'Bạn là TutuutusAI, trợ lý học tập thân thiện của Tututus web. Nếu được hỏi tên thì trả lời mình là TutuutusAI. Luôn trả lời bằng tiếng Việt (trừ khi người dùng yêu cầu ngôn ngữ khác), giải thích rõ ràng, có ví dụ, ngắn gọn dễ hiểu. Khi giải bài, trình bày từng bước.';
 
   const SUGGESTS = [
     'Giải thích định luật II Newton bằng ví dụ đời thường',
@@ -41,7 +44,7 @@
     c.keys = c.keys && typeof c.keys === 'object' ? c.keys : {};
     c.models = c.models && typeof c.models === 'object' ? c.models : {};
     c.bases = c.bases && typeof c.bases === 'object' ? c.bases : {};
-    if (typeof c.system !== 'string' || !c.system.trim()) c.system = DEFAULT_SYSTEM;
+    if (typeof c.system !== 'string' || !c.system.trim() || c.system.startsWith(OLD_SYSTEM_PREFIX)) c.system = DEFAULT_SYSTEM;
     return c;
   }
   function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (_) {} }
@@ -264,7 +267,7 @@ body.dark .ch-row.user .ch-av{background:#14532d}`;
         </div>
         <div class="ch-msgs" id="chMsgs"></div>
         <div class="ch-input">
-          <textarea id="chText" rows="1" placeholder="Hỏi AI bất cứ điều gì… (Enter để gửi, Shift+Enter xuống dòng)"></textarea>
+          <textarea id="chText" rows="1" placeholder="Nhắn cho TutuutusAI…"></textarea>
           <button class="ch-send" id="chSend">Gửi ➤</button>
         </div>
       </div>`;
@@ -340,14 +343,15 @@ body.dark .ch-row.user .ch-av{background:#14532d}`;
       if (!msgs.length) {
         box.innerHTML = `
           <div class="ch-empty">
-            <div class="ch-big">🤖</div>
-            <h3>Trò chuyện với AI</h3>
-            <div>Hỏi bài, nhờ giải thích khái niệm, dịch, tóm tắt, lên kế hoạch ôn thi…</div>
             <div class="ch-chips">${SUGGESTS.map(s => `<button class="ch-chip">${esc(s)}</button>`).join('')}</div>
           </div>`;
+        /* câu chào đầu tiên (không lưu vào lịch sử gửi cho AI) */
+        const g = addRow('assistant', GREETING);
+        box.insertBefore(g.closest('.ch-row'), box.firstChild);
         box.querySelectorAll('.ch-chip').forEach(b => b.addEventListener('click', () => { text.value = b.textContent; send(); }));
         return;
       }
+      addRow('assistant', GREETING);
       msgs.forEach(m => addRow(m.role, m.content));
     }
 
@@ -361,7 +365,7 @@ body.dark .ch-row.user .ch-av{background:#14532d}`;
       if (busy) return;
       const q = text.value.trim();
       if (!q) return;
-      if (!msgs.length) box.innerHTML = '';
+      if (!msgs.length) { box.innerHTML = ''; addRow('assistant', GREETING); }
       text.value = ''; autoGrow();
       msgs.push({ role: 'user', content: q });
       saveHis();
@@ -423,9 +427,65 @@ body.dark .ch-row.user .ch-av{background:#14532d}`;
   }
 
   window.Features['chat'] = {
-    title: 'Trò chuyện với AI',
+    title: 'Trò chuyện với ' + AI_NAME,
     icon: '🤖',
-    desc: 'Hỏi bài, giải thích, tóm tắt cùng trợ lý AI.',
+    desc: 'Hỏi bài, giải thích, tóm tắt cùng ' + AI_NAME + '.',
     render
   };
+
+  /* ---------- Icon nổi bật/tắt TutuutusAI ---------- */
+  function initFloating() {
+    if (document.getElementById('tuAiFab')) return;
+    const st = document.createElement('style');
+    st.textContent = `
+#tuAiFab{position:fixed;right:20px;bottom:20px;z-index:9000;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;font-size:26px;color:#fff;background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 6px 20px rgba(37,99,235,.45);display:grid;place-items:center;transition:transform .15s}
+#tuAiFab:hover{transform:scale(1.08)}
+#tuAiFab.hide,#tuAiPanel.hide{display:none}
+#tuAiPanel{position:fixed;right:20px;bottom:88px;z-index:9000;width:380px;height:min(580px,calc(100vh - 110px));background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(15,23,42,.3);display:none;flex-direction:column;overflow:hidden;border:1.5px solid #e2e8f0}
+#tuAiPanel.open{display:flex}
+#tuAiPanel .tu-head{display:flex;align-items:center;gap:8px;padding:10px 14px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-weight:800;font-size:14.5px}
+#tuAiPanel .tu-head span{flex:1}
+#tuAiPanel .tu-x{border:none;background:rgba(255,255,255,.2);color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:15px}
+#tuAiPanel .tu-body{flex:1;min-height:0}
+#tuAiPanel .ch-wrap{height:100%;min-height:0;max-width:none;border:none;border-radius:0}
+body.dark #tuAiPanel{background:#0f172a;border-color:#293548}
+@media (max-width:520px){#tuAiPanel{right:8px;left:8px;width:auto;bottom:80px}#tuAiFab{right:14px;bottom:14px}}`;
+    document.head.appendChild(st);
+
+    const fab = document.createElement('button');
+    fab.id = 'tuAiFab'; fab.type = 'button';
+    fab.title = 'Mở/tắt ' + AI_NAME; fab.setAttribute('aria-label', 'Mở/tắt ' + AI_NAME);
+    fab.textContent = '🤖';
+    const panel = document.createElement('div');
+    panel.id = 'tuAiPanel';
+    panel.innerHTML = `<div class="tu-head"><span>🤖 ${AI_NAME}</span><button class="tu-x" type="button" aria-label="Đóng">✕</button></div><div class="tu-body"></div>`;
+    document.body.appendChild(panel);
+    document.body.appendChild(fab);
+    const body = panel.querySelector('.tu-body');
+
+    function setOpen(v) {
+      if (v) {
+        if (!busy) render(body);
+        else if (!body.firstChild) render(body);
+      }
+      panel.classList.toggle('open', v);
+      fab.textContent = v ? '✕' : '🤖';
+    }
+    function onChatPage() { return /^#\/chat/.test(location.hash); }
+    function sync() {
+      const ls = document.getElementById('loginScreen');
+      const hide = onChatPage() || (ls && !ls.classList.contains('hidden'));
+      fab.classList.toggle('hide', hide);
+      if (hide) { panel.classList.remove('open'); fab.textContent = '🤖'; }
+    }
+    fab.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+    panel.querySelector('.tu-x').addEventListener('click', () => setOpen(false));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('open')) setOpen(false); });
+    window.addEventListener('hashchange', sync);
+    const ls0 = document.getElementById('loginScreen');
+    if (ls0 && window.MutationObserver) new MutationObserver(sync).observe(ls0, { attributes: true, attributeFilter: ['class'] });
+    sync();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initFloating);
+  else initFloating();
 })();
