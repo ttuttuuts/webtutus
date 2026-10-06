@@ -11,6 +11,7 @@
   const MAX_CONTEXT = 30;
 
   const PROVIDERS = {
+    free:       { label: '🆓 Miễn phí (không cần key)', kind: 'openai', nokey: true, base: 'https://text.pollinations.ai/openai', model: 'openai', hint: 'Dùng dịch vụ công khai miễn phí, không cần đăng ký hay nhập key. Có thể chậm hoặc bị giới hạn khi đông người.' },
     gemini:     { label: 'Google Gemini',        kind: 'openai',    base: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-2.5-flash', hint: 'Lấy key miễn phí tại aistudio.google.com/apikey' },
     openai:     { label: 'OpenAI',               kind: 'openai',    base: 'https://api.openai.com/v1',                                 model: 'gpt-4o-mini',      hint: 'platform.openai.com/api-keys' },
     groq:       { label: 'Groq',                 kind: 'openai',    base: 'https://api.groq.com/openai/v1',                            model: 'llama-3.3-70b-versatile', hint: 'console.groq.com/keys' },
@@ -36,7 +37,7 @@
   function loadCfg() {
     let c = {};
     try { c = JSON.parse(localStorage.getItem(CFG_KEY) || '{}') || {}; } catch (_) {}
-    if (!PROVIDERS[c.provider]) c.provider = 'gemini';
+    if (!PROVIDERS[c.provider]) c.provider = 'free';
     c.keys = c.keys && typeof c.keys === 'object' ? c.keys : {};
     c.models = c.models && typeof c.models === 'object' ? c.models : {};
     c.bases = c.bases && typeof c.bases === 'object' ? c.bases : {};
@@ -171,7 +172,7 @@ body.dark .ch-row.user .ch-av{background:#14532d}`;
     const c = currentConn();
     if (!c.base) throw new Error('Chưa nhập Base URL. Mở ⚙️ Cài đặt AI để điền.');
     if (!c.model) throw new Error('Chưa nhập tên model. Mở ⚙️ Cài đặt AI để điền.');
-    if (!c.key && cfg.provider !== 'custom') throw new Error('Chưa có API key. Mở ⚙️ Cài đặt AI và dán key vào nhé.');
+    if (!c.key && cfg.provider !== 'custom' && !PROVIDERS[cfg.provider].nokey) throw new Error('Chưa có API key. Mở ⚙️ Cài đặt AI và dán key vào nhé.');
 
     let url, headers, body;
     const ctx = history.slice(-MAX_CONTEXT).map(m => ({ role: m.role, content: m.content }));
@@ -254,7 +255,7 @@ body.dark .ch-row.user .ch-av{background:#14532d}`;
           </label>
           <label>Model <input id="chModelIn" type="text" autocomplete="off" spellcheck="false"></label>
           <label class="full" id="chBaseWrap">Base URL <input id="chBaseIn" type="text" autocomplete="off" spellcheck="false"></label>
-          <label class="full">API key <input id="chKey" type="password" autocomplete="off" placeholder="Dán API key vào đây">
+          <label class="full" id="chKeyWrap">API key <input id="chKey" type="password" autocomplete="off" placeholder="Dán API key vào đây">
             <span class="ch-hint" id="chHint"></span>
           </label>
           <label class="full">Chỉ dẫn hệ thống (tuỳ chọn) <textarea id="chSys"></textarea></label>
@@ -274,7 +275,7 @@ body.dark .ch-row.user .ch-av{background:#14532d}`;
 
     function refreshModelLabel() {
       const c = currentConn();
-      $('chModel').textContent = c.key || cfg.provider === 'custom' ? `${PROVIDERS[cfg.provider].label} · ${c.model || '—'}` : '⚠️ Chưa có API key';
+      $('chModel').textContent = c.key || cfg.provider === 'custom' || PROVIDERS[cfg.provider].nokey ? `${PROVIDERS[cfg.provider].label} · ${c.model || '—'}` : '⚠️ Chưa có API key';
     }
     function fillSettings() {
       const p = PROVIDERS[prov.value];
@@ -283,12 +284,13 @@ body.dark .ch-row.user .ch-av{background:#14532d}`;
       $('chBaseWrap').style.display = (prov.value === 'custom') ? '' : 'none';
       $('chKey').value = cfg.keys[prov.value] || '';
       $('chHint').textContent = p.hint;
+      $('chKeyWrap').style.display = p.nokey ? 'none' : '';
     }
     prov.value = cfg.provider;
     fillSettings();
     $('chSys').value = cfg.system;
     refreshModelLabel();
-    if (!currentConn().key && cfg.provider !== 'custom') settings.classList.add('open');
+    if (!currentConn().key && cfg.provider !== 'custom' && !PROVIDERS[cfg.provider].nokey) settings.classList.add('open');
 
     prov.addEventListener('change', fillSettings);
     $('chSet').addEventListener('click', () => settings.classList.toggle('open'));
