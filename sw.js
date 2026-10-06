@@ -17,7 +17,7 @@ const ASSETS = [
   './js/formulas.js',
   './js/notify.js',
   './js/main.js',
-  './js/features/notes.js',
+  './js/features/note.js',
   './js/features/flashcard.js',
   './js/features/pomodoro.js',
   './js/features/stats.js',
@@ -25,6 +25,7 @@ const ASSETS = [
   './js/features/exam.js',
   './js/features/dictionary.js',
   './js/features/tts.js',
+  './js/features/chat.js',
   './js/features/mindmap.js'
 ];
 

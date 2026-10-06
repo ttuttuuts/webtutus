@@ -143,6 +143,7 @@ body{margin:0;min-height:100vh;font-family:"Segoe UI",system-ui,-apple-system,"H
 .feature-card.todo .fc-icon{background:linear-gradient(135deg,#dcfce7,#bbf7d0)}
 .feature-card.exam .fc-icon{background:linear-gradient(135deg,#ede9fe,#ddd6fe)}
 .feature-card.tts .fc-icon{background:linear-gradient(135deg,#fef9c3,#fde68a)}
+.feature-card.chat .fc-icon{background:linear-gradient(135deg,#cffafe,#a5f3fc)}
 .feature-card.convert .fc-icon{background:linear-gradient(135deg,#fef3c7,#fde68a)}
 .home-footer{text-align:center;font-size:12px;color:var(--muted);padding:20px 0 8px;line-height:1.7}
 .home-footer kbd{font-family:inherit;font-size:11px;font-weight:800;padding:2px 7px;border-radius:6px;background:#fff;color:var(--blue-deep);border:1.5px solid #c7d9fd;margin:0 2px}
@@ -420,6 +421,7 @@ body.dark .feature-card.formula .fc-icon{background:linear-gradient(135deg,#4c05
 body.dark .feature-card.calc .fc-icon{background:linear-gradient(135deg,#2e1065,#4c1d95)}
 body.dark .feature-card.todo .fc-icon{background:linear-gradient(135deg,#052e16,#166534)}
 body.dark .feature-card.exam .fc-icon{background:linear-gradient(135deg,#2e1065,#4c1d95)}
+body.dark .feature-card.chat .fc-icon{background:linear-gradient(135deg,#083344,#155e75)}
 body.dark .feature-card.convert .fc-icon{background:linear-gradient(135deg,#422006,#78350f)}
 body.dark .home-footer kbd{background:#1e293b;color:#93c5fd;border-color:#334155}
 body.dark .feature-placeholder{background:rgba(15,23,42,.9);border-color:#3b82f6}
@@ -933,6 +935,7 @@ body.dark .tts-warn{background:#422006;color:#fbbf24}
       <button class="sb-item" data-route="todo"><span class="sb-icon">✅</span><span class="sb-label">To-do &amp; Deadline</span></button>
       <button class="sb-item" data-route="exam"><span class="sb-icon">⏳</span><span class="sb-label">Đếm ngược kì thi</span></button>
       <button class="sb-item" data-route="tts"><span class="sb-icon">🔊</span><span class="sb-label">Đọc văn bản (TTS)</span></button>
+      <button class="sb-item" data-route="chat"><span class="sb-icon">🤖</span><span class="sb-label">Trò chuyện với AI</span></button>
       <button class="sb-item" id="calcOpenBtn"><span class="sb-icon">🧮</span><span class="sb-label">Máy tính khoa học</span></button>
 
       <div class="sb-section-label">Sắp ra mắt<span class="sb-soon-dot"></span></div>
@@ -995,6 +998,12 @@ body.dark .tts-warn{background:#422006;color:#fbbf24}
               <div class="fc-icon">🔊</div>
               <div class="fc-title">Đọc văn bản (TTS)</div>
               <div class="fc-desc">Nghe đọc to đoạn văn bản, chỉnh giọng, tốc độ, đọc theo từng câu.</div>
+              <div class="fc-cta">Mở ngay →</div>
+            </div>
+            <div class="feature-card chat" data-route="chat">
+              <div class="fc-icon">🤖</div>
+              <div class="fc-title">Trò chuyện với AI</div>
+              <div class="fc-desc">Hỏi bài, giải thích, tóm tắt, lên kế hoạch ôn thi cùng trợ lý AI.</div>
               <div class="fc-cta">Mở ngay →</div>
             </div>
             <div class="feature-card calc" id="calcCardBtn">
@@ -1230,7 +1239,7 @@ body.dark .tts-warn{background:#422006;color:#fbbf24}
 <script defer src="js/pdf.js"></script>
 <script defer src="js/formulas.js"></script>
 <script defer src="js/notify.js"></script>
-<script defer src="js/features/notes.js"></script>
+<script defer src="js/features/note.js"></script>
 <script defer src="js/features/flashcard.js"></script>
 <script defer src="js/features/pomodoro.js"></script>
 <script defer src="js/features/stats.js"></script>
@@ -1239,6 +1248,7 @@ body.dark .tts-warn{background:#422006;color:#fbbf24}
 <script defer src="js/features/convert.js"></script>
 <script defer src="js/features/dictionary.js"></script>
 <script defer src="js/features/tts.js"></script>
+<script defer src="js/features/chat.js"></script>
 <script defer src="js/features/mindmap.js"></script>
 <script defer src="js/main.js"></script>
 </body>

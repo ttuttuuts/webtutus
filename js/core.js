@@ -67,6 +67,7 @@
     'todo': { page: 'feature', title: 'To-do & Deadline', icon: '✅', desc: 'Quản lý bài tập theo môn.' },
     'dictionary': { page: 'feature', title: 'Từ điển tra nhanh', icon: '🔤', desc: 'Tra Anh–Việt trong popup.' },
     'tts': { page: 'feature', title: 'Đọc văn bản (TTS)', icon: '🔊', desc: 'Nghe đọc to đoạn văn bản.' },
+    'chat': { page: 'feature', title: 'Trò chuyện với AI', icon: '🤖', desc: 'Hỏi bài, giải thích, tóm tắt cùng trợ lý AI.' },
     'mindmap': { page: 'feature', title: 'Sơ đồ tư duy', icon: '🗺️', desc: 'Kéo thả node tạo mind map.' },
   };
   window.App.ROUTES = ROUTES;
