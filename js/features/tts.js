@@ -180,6 +180,20 @@
     wavCache.forEach(p => p.then(u => URL.revokeObjectURL(u)).catch(() => {}));
     wavCache.clear();
   }
+  let actx = null;
+  function brighten(a) {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      actx = actx || new AC();
+      if (actx.state === 'suspended') actx.resume().catch(() => {});
+      const src = actx.createMediaElementSource(a);
+      const hp = actx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 90;           // bớt ù trầm
+      const mid = actx.createBiquadFilter(); mid.type = 'peaking'; mid.frequency.value = 2800; mid.Q.value = 0.9; mid.gain.value = 2.5;
+      const air = actx.createBiquadFilter(); air.type = 'highshelf'; air.frequency.value = 6000; air.gain.value = 4;  // thêm độ trong
+      src.connect(hp); hp.connect(mid); mid.connect(air); air.connect(actx.destination);
+    } catch (_) {}
+  }
   function stopAudio() {
     const a = st.audio;
     if (a) { a.onended = a.onerror = null; a.pause(); st.audio = null; }
@@ -235,13 +249,31 @@
   }
 
   /* ---------- voices ---------- */
+  function rankVoice(v) {
+    const n = v.name || '';
+    if (/HoaiMy/i.test(n)) return 0;                 // Edge: Microsoft HoaiMy Online (Natural) – trong, mượt
+    if (/Natural|Neural|Online/i.test(n)) return 1;
+    if (/Google/i.test(n)) return 2;
+    return 3;
+  }
   function refreshVoices() {
+    st.voices = synth ? synth.getVoices() : [];
     const ui = st.ui;
     if (!ui) return;
-    ui.voice.innerHTML = PIPER_VOICES.map(v => `<option value="${v.id}">${escapeHtml(v.label)}</option>`).join('');
-    ui.voice.value = PIPER_VOICES[0].id;
-    ui.voice.disabled = true;
-    ui.viWarn.style.display = 'none';
+    const prefs = loadPrefs();
+    const vi = st.voices.filter(v => /^vi/i.test(v.lang)).sort((a, b) => rankVoice(a) - rankVoice(b));
+    const opt = (v, i) => `<option value="${escapeHtml(v.voiceURI)}">${i === 0 ? '✨ ' : ''}${escapeHtml(v.name)}</option>`;
+    let html = '';
+    if (vi.length) html += `<optgroup label="Giọng hệ thống (tự nhiên nhất)">${vi.map(opt).join('')}</optgroup>`;
+    html += `<optgroup label="Giọng AI offline">${PIPER_VOICES.map(v =>
+      `<option value="${v.id}">${escapeHtml(v.label)}</option>`).join('')}</optgroup>`;
+    ui.voice.innerHTML = html;
+    ui.voice.disabled = false;
+    const want = prefs.voice;
+    if (want && (piperOf(want) || vi.some(v => v.voiceURI === want))) ui.voice.value = want;
+    else if (vi.length && rankVoice(vi[0]) <= 2) ui.voice.value = vi[0].voiceURI;   // tự chọn giọng hay nhất
+    else ui.voice.value = PIPER_VOICES[0].id;
+    ui.viWarn.style.display = (!vi.length) ? 'block' : 'none';
   }
 
   function getVoice() {
@@ -323,14 +355,16 @@
 
   /* ---------- điều khiển đọc ---------- */
   function speakChunk(i) {
+    if (!synth && !piperOf(st.ui && st.ui.voice.value)) return;
     if (i < 0) i = 0;
     if (i >= st.chunks.length) { finish(); return; }
     st.idx = i;
     st.dirty = false;
     const my = ++st.token;
     stopAudio();
-    const pv = PIPER_VOICES[0];
+    const pv = piperOf(st.ui && st.ui.voice.value);
     if (pv) { if (synth) synth.cancel(); speakPiper(i, pv, my); return; }
+    if (!synth) return;
     const raw = st.chunks[i].text;
     const lead = raw.length - raw.trimStart().length;
     const u = new SpeechSynthesisUtterance(raw.trim());
@@ -374,6 +408,7 @@
       a.volume = parseFloat(ui.volume.value);
       a.onended = () => { if (my === st.token) speakChunk(i + 1); };
       a.onerror = () => { if (my !== st.token) return; toast('⚠️ Không phát được âm thanh'); stop(); };
+      brighten(a);
       st.audio = a;
       if (st.status === 'playing') a.play().catch(() => {});
       /* tạo sẵn câu kế tiếp để đọc liền mạch */
@@ -405,7 +440,8 @@
 
   function start() {
     const ui = st.ui;
-        let text = ui.text.value;
+        if (!synth && !piperOf(ui.voice.value)) { toast('Trình duyệt không hỗ trợ đọc văn bản'); return; }
+    let text = ui.text.value;
     const a = ui.text.selectionStart, b = ui.text.selectionEnd;
     if (b > a && text.slice(a, b).trim()) text = text.slice(a, b);   // chỉ đọc phần bôi chọn
     text = text.trim();
@@ -490,14 +526,14 @@
             <label for="ttsVoice">Giọng đọc</label>
             <select id="ttsVoice"><option value="">Đang tải giọng đọc…</option></select>
             <div class="tts-warn" id="ttsViWarn" style="display:none">
-              ℹ️ Máy chưa có giọng tiếng Việt của hệ thống — bạn vẫn dùng được nhóm "Giọng tiếng Việt" ở trên. Muốn thêm giọng hệ thống: trên Windows: Cài đặt → Thời gian &amp; ngôn ngữ → Giọng nói → thêm giọng Tiếng Việt. Chrome/Edge trên Android và Safari thường có sẵn.
+              ℹ️ Máy chưa có giọng hệ thống tiếng Việt nên đang dùng giọng AI offline. Giọng hay nhất: mở bằng Microsoft Edge để có "HoaiMy Online (Natural)" (miễn phí). Muốn thêm giọng hệ thống: trên Windows: Cài đặt → Thời gian &amp; ngôn ngữ → Giọng nói → thêm giọng Tiếng Việt. Chrome/Edge trên Android và Safari thường có sẵn.
             </div>
           </div>
           <div class="tts-field">
             <label for="ttsRate">Tốc độ <b id="ttsRateVal"></b></label>
             <input type="range" id="ttsRate" min="0.5" max="2" step="0.1">
           </div>
-          <div class="tts-field" style="display:none">
+          <div class="tts-field">
             <label for="ttsPitch">Cao độ <b id="ttsPitchVal"></b></label>
             <input type="range" id="ttsPitch" min="0" max="2" step="0.1">
           </div>
@@ -520,7 +556,7 @@
 
     ui.text.value = typeof prefs.text === 'string' ? prefs.text : '';
     ui.rate.value = num(prefs.rate, 1);
-    ui.pitch.value = num(prefs.pitch, 1);
+    ui.pitch.value = num(prefs.pitch, 1.1);
     ui.volume.value = num(prefs.volume, 1);
 
     function persist() {
