@@ -363,6 +363,12 @@ body.viewing .pdf-viewer{max-height:82vh}
 .scratch-graph-bar button{height:24px;padding:0 12px;border:none;border-radius:7px;background:linear-gradient(135deg,var(--blue-2),var(--blue));color:#fff;font-weight:700;font-size:12px;cursor:pointer}
 body.dark .scratch-graph-bar{background:#0f1a2e;border-color:var(--line)}
 body.dark .sc-shape-sel,body.dark .scratch-graph-bar input{background:#0b1220;border-color:#293548;color:#93c5fd}
+.sc-color-input{width:20px;height:20px;border:2px solid #fff;border-radius:50%;padding:0;cursor:pointer;box-shadow:0 0 0 1.5px rgba(100,116,139,.35);-webkit-appearance:none;appearance:none;background:transparent;overflow:hidden;flex:none}
+.sc-color-input::-webkit-color-swatch-wrapper{padding:0}
+.sc-color-input::-webkit-color-swatch{border:none;border-radius:50%}
+.sc-eraser-cursor{position:fixed;pointer-events:none;border:2px solid rgba(220,38,38,.85);background:rgba(220,38,38,.12);border-radius:50%;display:none;z-index:210;transform:translate(-50%,-50%)}
+.sc-eraser-cursor.show{display:block}
+.scratch-panel.eraser .scratch-body canvas{cursor:none}
 .sc-rz{position:absolute;z-index:3;touch-action:none}
 .sc-rz-n,.sc-rz-s{left:14px;right:14px;height:7px;cursor:ns-resize}
 .sc-rz-e,.sc-rz-w{top:14px;bottom:14px;width:7px;cursor:ew-resize}

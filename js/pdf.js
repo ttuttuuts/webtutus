@@ -18,6 +18,8 @@
   const RENDER_ROOT_MARGIN = 800;
   const B_DOUBLE_MS = 280;
   let bPressCount = 0, bPressTimer = null;
+  const penListeners = []; let penSyncing = false;
+  function notifyPen() { if (penSyncing) return; const st = { tool: activeTool, color: penColor, width: penWidth }; penListeners.forEach(fn => { try { fn(st); } catch (_) {} }); }
 
   const toast = (m) => window.App.toast(m);
   const showSaveToast = (m) => window.App.showSaveToast(m);
@@ -421,6 +423,7 @@
       hintLabel.textContent = selectMode ? '✂️ Chế độ chọn — kéo để tạo khung' : 'Kéo chuột để cuộn — nhấn B 2 lần để chọn vùng';
       eraserCursor.classList.remove('show');
     }
+    notifyPen();
   }
   penBtn.addEventListener('click', () => {
     activeTool = (activeTool === 'pen') ? null : 'pen';
@@ -434,15 +437,37 @@
     updateToolUI();
     toast(activeTool === 'eraser' ? '🧽 Bật cục tẩy' : 'Đã tắt cục tẩy');
   });
-  penColorInput.addEventListener('input', e => { penColor = e.target.value; });
+  penColorInput.addEventListener('input', e => { penColor = e.target.value; notifyPen(); });
   document.querySelectorAll('.pen-size').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.pen-size').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       penWidth = parseInt(btn.dataset.size, 10);
       updateEraserCursorSize();
+      notifyPen();
     });
   });
+  /* ---------- ĐỒNG BỘ bút/tẩy với bảng Nháp (scratch.js) ---------- */
+  window.PenSync = {
+    get: () => ({ tool: activeTool, color: penColor, width: penWidth }),
+    onChange: fn => penListeners.push(fn),
+    set(o) {
+      penSyncing = true;
+      try {
+        if (o.color) { penColor = o.color; penColorInput.value = o.color; }
+        if (o.width) {
+          penWidth = o.width;
+          document.querySelectorAll('.pen-size').forEach(b => b.classList.toggle('active', parseInt(b.dataset.size, 10) === penWidth));
+          updateEraserCursorSize();
+        }
+        if ('tool' in o && o.tool !== activeTool) {
+          activeTool = o.tool;
+          if (activeTool) { selectMode = false; updateSelectModeUI(); }
+          updateToolUI();
+        }
+      } finally { penSyncing = false; }
+    }
+  };
   penClear.addEventListener('click', async () => {
     if (allStrokes.length === 0) return toast('Chưa có nét vẽ nào');
     if (!confirm('Xoá tất cả nét vẽ?')) return;

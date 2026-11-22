@@ -14,7 +14,7 @@
 
   const LS_KEY = 'scratchPadV1';
   const COLORS = ['#1e293b', '#ef4444', '#2563eb', '#16a34a'];
-  const SIZES = [2, 4, 8];
+  const SIZES = [2, 4, 7];   // giống 3 cỡ nét của bút PDF
   const MIN_W = 150, MIN_H = 130;
 
   const state = {
@@ -70,10 +70,13 @@
     <div class="scratch-tools">
       <span id="scTools"></span>
       <select class="sc-shape-sel" id="scShapeSel" title="Hình đặc biệt"></select>
+      <button type="button" class="scratch-mini" id="scImgBtn" title="Chèn ảnh (hoặc dán Ctrl+V / kéo thả ảnh vào đây)">🖼️</button>
+      <input type="file" id="scImgInput" accept="image/*" hidden>
       <button type="button" class="scratch-mini" id="scGraphBtn" title="Vẽ đồ thị hàm số y = f(x)">📈</button>
       <button type="button" class="scratch-mini" id="scDash" title="Nét đứt (cho hình học)">┅</button>
       <span class="scratch-sep"></span>
       <span id="scColors"></span>
+      <input type="color" class="sc-color-input" id="scColorInput" title="Chọn màu bất kỳ (dùng chung với bút PDF)">
       <span class="scratch-sep"></span>
       <span id="scSizes"></span>
       <button type="button" class="scratch-mini scratch-clear" id="scClear" title="Xoá trang nháp này">🗑️</button>
@@ -88,6 +91,9 @@
     <div class="scratch-body"><canvas id="scCanvas"></canvas></div>
     ${['n','s','e','w','ne','nw','se','sw'].map(d => `<div class="sc-rz sc-rz-${d}" data-dir="${d}"></div>`).join('')}`;
   document.body.appendChild(panel);
+  const eraserCur = document.createElement('div');
+  eraserCur.className = 'sc-eraser-cursor';
+  document.body.appendChild(eraserCur);
 
   const $ = id => panel.querySelector('#' + id);
   const head = $('scratchHead'), canvas = $('scCanvas'), body = panel.querySelector('.scratch-body');
@@ -95,7 +101,7 @@
   const toast = m => { try { window.App.toast(m); } catch (_) {} };
 
   const TOOLS = [
-    ['pen', '✏️', 'Bút tự do'], ['eraser', '🧽', 'Tẩy'],
+    ['pen', '✏️', 'Bút tự do'], ['eraser', '🧽', 'Tẩy'], ['select', '⬚', 'Chọn: khoanh vùng (hoặc bấm vào nét/ảnh) rồi kéo để di chuyển · Delete để xoá'],
     ['line', '╱', 'Đoạn thẳng (giữ Shift: góc 15°)'], ['arrow', '↗', 'Mũi tên / vectơ'],
     ['rect', '▭', 'Hình chữ nhật (giữ Shift: vuông)'], ['ellipse', '⬭', 'Elip (giữ Shift: tròn)'],
     ['circle', '◯', 'Đường tròn: kéo từ tâm ra bán kính'], ['tri', '△', 'Tam giác (cân, trong khung kéo)'],
@@ -112,8 +118,8 @@
     ['rhombus', 'Hình thoi'], ['trap', 'Hình thang cân'], ['para', 'Hình bình hành'],
     ['pent', 'Ngũ giác đều (kéo từ tâm)'], ['hex', 'Lục giác đều (kéo từ tâm)']
   ];
-  const sel = $('scShapeSel');
-  sel.innerHTML = '<option value="">▾ Hình đặc biệt</option>' + SPECIAL.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+  const shapeSel = $('scShapeSel');
+  shapeSel.innerHTML = '<option value="">▾ Hình đặc biệt</option>' + SPECIAL.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
 
   /* swatch màu + cỡ nét */
   COLORS.forEach(c => {
@@ -160,64 +166,64 @@
     canvas.style.height = h + 'px';
     redraw();
   }
-  function shapePath(s) {
+  function shapePath(s, c = ctx) {
     const [a, b] = s.p, [x1, y1] = a, [x2, y2] = b;
     const dx = x2 - x1, dy = y2 - y1;
-    ctx.beginPath();
+    c.beginPath();
     switch (s.t) {
-      case 'line': ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); break;
+      case 'line': c.moveTo(x1, y1); c.lineTo(x2, y2); break;
       case 'arrow': {
-        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+        c.moveTo(x1, y1); c.lineTo(x2, y2);
         const L = Math.hypot(dx, dy); if (L < 2) break;
         const ang = Math.atan2(dy, dx), h = Math.min(14 + s.w * 1.5, L * 0.5);
-        ctx.moveTo(x2, y2); ctx.lineTo(x2 - h * Math.cos(ang - 0.45), y2 - h * Math.sin(ang - 0.45));
-        ctx.moveTo(x2, y2); ctx.lineTo(x2 - h * Math.cos(ang + 0.45), y2 - h * Math.sin(ang + 0.45));
+        c.moveTo(x2, y2); c.lineTo(x2 - h * Math.cos(ang - 0.45), y2 - h * Math.sin(ang - 0.45));
+        c.moveTo(x2, y2); c.lineTo(x2 - h * Math.cos(ang + 0.45), y2 - h * Math.sin(ang + 0.45));
         break;
       }
-      case 'rect': ctx.rect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(dx), Math.abs(dy)); break;
-      case 'ellipse': ctx.ellipse((x1 + x2) / 2, (y1 + y2) / 2, Math.abs(dx) / 2, Math.abs(dy) / 2, 0, 0, Math.PI * 2); break;
-      case 'circle': ctx.arc(x1, y1, Math.hypot(dx, dy), 0, Math.PI * 2); break;
-      case 'tri': ctx.moveTo((x1 + x2) / 2, y1); ctx.lineTo(x2, y2); ctx.lineTo(x1, y2); ctx.closePath(); break;
-      case 'rtri': ctx.moveTo(x1, y1); ctx.lineTo(x1, y2); ctx.lineTo(x2, y2); ctx.closePath(); break;
+      case 'rect': c.rect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(dx), Math.abs(dy)); break;
+      case 'ellipse': c.ellipse((x1 + x2) / 2, (y1 + y2) / 2, Math.abs(dx) / 2, Math.abs(dy) / 2, 0, 0, Math.PI * 2); break;
+      case 'circle': c.arc(x1, y1, Math.hypot(dx, dy), 0, Math.PI * 2); break;
+      case 'tri': c.moveTo((x1 + x2) / 2, y1); c.lineTo(x2, y2); c.lineTo(x1, y2); c.closePath(); break;
+      case 'rtri': c.moveTo(x1, y1); c.lineTo(x1, y2); c.lineTo(x2, y2); c.closePath(); break;
       case 'eqtri': {
         const L = Math.hypot(dx, dy) || 1, h = Math.sqrt(3) / 2 * L;
         const cx = (x1 + x2) / 2 + dy / L * h, cy = (y1 + y2) / 2 - dx / L * h;
-        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(cx, cy); ctx.closePath(); break;
+        c.moveTo(x1, y1); c.lineTo(x2, y2); c.lineTo(cx, cy); c.closePath(); break;
       }
       case 'ritri2': {
         const m = Math.max(Math.abs(dx), Math.abs(dy)), sx = Math.sign(dx || 1), sy = Math.sign(dy || 1);
-        ctx.moveTo(x1, y1); ctx.lineTo(x1, y1 + sy * m); ctx.lineTo(x1 + sx * m, y1 + sy * m); ctx.closePath(); break;
+        c.moveTo(x1, y1); c.lineTo(x1, y1 + sy * m); c.lineTo(x1 + sx * m, y1 + sy * m); c.closePath(); break;
       }
       case 'square': {
         const m = Math.max(Math.abs(dx), Math.abs(dy));
-        ctx.rect(x1, y1, Math.sign(dx || 1) * m, Math.sign(dy || 1) * m); break;
+        c.rect(x1, y1, Math.sign(dx || 1) * m, Math.sign(dy || 1) * m); break;
       }
       case 'rhombus': {
         const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
-        ctx.moveTo(cx, y1); ctx.lineTo(x2, cy); ctx.lineTo(cx, y2); ctx.lineTo(x1, cy); ctx.closePath(); break;
+        c.moveTo(cx, y1); c.lineTo(x2, cy); c.lineTo(cx, y2); c.lineTo(x1, cy); c.closePath(); break;
       }
       case 'trap': {
         const ix = dx * 0.25;
-        ctx.moveTo(x1 + ix, y1); ctx.lineTo(x2 - ix, y1); ctx.lineTo(x2, y2); ctx.lineTo(x1, y2); ctx.closePath(); break;
+        c.moveTo(x1 + ix, y1); c.lineTo(x2 - ix, y1); c.lineTo(x2, y2); c.lineTo(x1, y2); c.closePath(); break;
       }
       case 'para': {
         const sk = dx * 0.25;
-        ctx.moveTo(x1 + sk, y1); ctx.lineTo(x2, y1); ctx.lineTo(x2 - sk, y2); ctx.lineTo(x1, y2); ctx.closePath(); break;
+        c.moveTo(x1 + sk, y1); c.lineTo(x2, y1); c.lineTo(x2 - sk, y2); c.lineTo(x1, y2); c.closePath(); break;
       }
       case 'pent': case 'hex': {
         const n = s.t === 'pent' ? 5 : 6, R = Math.hypot(dx, dy);
         for (let i = 0; i < n; i++) {
           const a = -Math.PI / 2 + 2 * Math.PI * i / n;
-          i ? ctx.lineTo(x1 + R * Math.cos(a), y1 + R * Math.sin(a)) : ctx.moveTo(x1 + R * Math.cos(a), y1 + R * Math.sin(a));
+          i ? c.lineTo(x1 + R * Math.cos(a), y1 + R * Math.sin(a)) : c.moveTo(x1 + R * Math.cos(a), y1 + R * Math.sin(a));
         }
-        ctx.closePath(); break;
+        c.closePath(); break;
       }
       case 'coord': {
         const ah = 8;
-        ctx.moveTo(x1, y2); ctx.lineTo(x2, y2);            // trục hoành
-        ctx.moveTo(x2 - ah, y2 - ah / 2); ctx.lineTo(x2, y2); ctx.lineTo(x2 - ah, y2 + ah / 2);
-        ctx.moveTo(x1, y2); ctx.lineTo(x1, y1);            // trục tung
-        ctx.moveTo(x1 - ah / 2, y1 + ah); ctx.lineTo(x1, y1); ctx.lineTo(x1 + ah / 2, y1 + ah);
+        c.moveTo(x1, y2); c.lineTo(x2, y2);            // trục hoành
+        c.moveTo(x2 - ah, y2 - ah / 2); c.lineTo(x2, y2); c.lineTo(x2 - ah, y2 + ah / 2);
+        c.moveTo(x1, y2); c.lineTo(x1, y1);            // trục tung
+        c.moveTo(x1 - ah / 2, y1 + ah); c.lineTo(x1, y1); c.lineTo(x1 + ah / 2, y1 + ah);
         break;
       }
     }
@@ -340,6 +346,16 @@
   }
   const GRAPH_COLORS = ['#2563eb', '#ef4444', '#16a34a', '#9333ea', '#ea580c'];
 
+  const imgCache = new Map();
+  function getImg(src) {
+    let im = imgCache.get(src);
+    if (!im) { im = new Image(); im.onload = () => redraw(); im.src = src; imgCache.set(src, im); }
+    return im;
+  }
+  function paintImg(s) {
+    const im = getImg(s.src);
+    if (im.complete && im.naturalWidth) ctx.drawImage(im, s.x, s.y, s.w, s.h);
+  }
   function paintStroke(s) {
     const dpr = window.devicePixelRatio || 1;
     ctx.save();
@@ -347,7 +363,9 @@
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.globalCompositeOperation = s.e ? 'destination-out' : 'source-over';
     ctx.strokeStyle = s.c; ctx.fillStyle = s.c; ctx.lineWidth = s.w;
-    if (s.t === 'graph') {
+    if (s.t === 'img') {
+      paintImg(s);
+    } else if (s.t === 'graph') {
       paintGraph(s);
     } else if (s.t) {
       if (s.d) ctx.setLineDash([s.w * 3 + 3, s.w * 2 + 3]);
@@ -364,14 +382,227 @@
   function redraw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     strokes().forEach(paintStroke);
+    drawOverlay();
   }
 
-  let drawing = null;
+  /* ---------- CHỌN / DI CHUYỂN / CHÈN ẢNH ---------- */
+  let sel = null;          // { items: [stroke refs] }
+  let sdrag = null;        // { type: 'lasso'|'move'|'resize', ... }
+  function recorder() {
+    const pts = [];
+    return { pts, beginPath() {}, closePath() {}, moveTo(x, y) { pts.push([x, y]); }, lineTo(x, y) { pts.push([x, y]); },
+      rect(x, y, w, h) { pts.push([x, y], [x + w, y + h]); }, ellipse(x, y, rx, ry) { pts.push([x - rx, y - ry], [x + rx, y + ry]); },
+      arc(x, y, r) { pts.push([x - r, y - r], [x + r, y + r]); } };
+  }
+  function bboxOf(s) {
+    let pts;
+    if (s.t === 'img') return [s.x, s.y, s.x + s.w, s.y + s.h];
+    if (s.t === 'graph') {
+      let fn; try { fn = compile(s.expr); } catch (_) { return null; }
+      const W = canvas.width / (window.devicePixelRatio || 1), H = canvas.height / (window.devicePixelRatio || 1);
+      pts = [];
+      for (let px = 0; px <= W; px += 4) {
+        let v; try { v = fn((px - s.ox) / s.sc); } catch (_) { continue; }
+        const y = s.oy - v * s.sc; if (isFinite(y) && y > -H && y < 2 * H) pts.push([px, y]);
+      }
+    } else if (s.t) { const r = recorder(); shapePath(s, r); pts = r.pts; }
+    else pts = s.p;
+    if (!pts || !pts.length) return null;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    pts.forEach(q => { x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]); });
+    const pad = (s.w || 0) / 2;
+    return [x0 - pad, y0 - pad, x1 + pad, y1 + pad];
+  }
+  function inPoly(x, y, poly) {
+    let c = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i], [xj, yj] = poly[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+    }
+    return c;
+  }
+  function pickByLasso(poly) {
+    return strokes().filter(s => {
+      if (s.e) return false;
+      if (!s.t) { const n = s.p.filter(q => inPoly(q[0], q[1], poly)).length; return n >= s.p.length / 2; }
+      const b = bboxOf(s); if (!b) return false;
+      return inPoly((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, poly);
+    });
+  }
+  function selBox() {
+    if (!sel || !sel.items.length) return null;
+    let box = null;
+    sel.items.forEach(s => { const b = bboxOf(s); if (!b) return; box = box ? [Math.min(box[0], b[0]), Math.min(box[1], b[1]), Math.max(box[2], b[2]), Math.max(box[3], b[3])] : b.slice(); });
+    return box && [box[0] - 5, box[1] - 5, box[2] + 5, box[3] + 5];
+  }
+  const inBox = (q, b, pad = 0) => b && q[0] >= b[0] - pad && q[0] <= b[2] + pad && q[1] >= b[1] - pad && q[1] <= b[3] + pad;
+  function singleImg() { return sel && sel.items.length === 1 && sel.items[0].t === 'img' ? sel.items[0] : null; }
+  const handleOf = b => [b[2], b[3]];
+  function moveItem(s, dx, dy) {
+    if (s.t === 'img') { s.x += dx; s.y += dy; }
+    else if (s.t === 'graph') { s.ox += dx; s.oy += dy; }
+    if (s.p) s.p.forEach(q => { q[0] += dx; q[1] += dy; });
+  }
+  function drawOverlay() {
+    const dpr = window.devicePixelRatio || 1;
+    ctx.save(); ctx.scale(dpr, dpr);
+    const b = selBox();
+    if (b) {
+      ctx.setLineDash([6, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = '#2563eb'; ctx.fillStyle = 'rgba(37,99,235,.07)';
+      ctx.fillRect(b[0], b[1], b[2] - b[0], b[3] - b[1]); ctx.strokeRect(b[0], b[1], b[2] - b[0], b[3] - b[1]);
+      if (singleImg()) { ctx.setLineDash([]); ctx.fillStyle = '#fff'; ctx.fillRect(b[2] - 6, b[3] - 6, 12, 12); ctx.strokeRect(b[2] - 6, b[3] - 6, 12, 12); }
+    }
+    if (sdrag && sdrag.type === 'lasso' && sdrag.pts.length > 1) {
+      ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = '#2563eb'; ctx.fillStyle = 'rgba(37,99,235,.08)';
+      ctx.beginPath(); sdrag.pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function clearSel() { if (sel || sdrag) { sel = null; sdrag = null; redraw(); } }
+  function selectDown(q) {
+    const b = selBox(), im = singleImg();
+    if (b && im) { const h = handleOf(b); if (Math.hypot(q[0] - h[0], q[1] - h[1]) <= 10) { sdrag = { type: 'resize', start: q, w0: im.w, h0: im.h }; return; } }
+    if (b && inBox(q, b, 4)) { sdrag = { type: 'move', last: q }; return; }
+    sdrag = { type: 'lasso', pts: [q] };
+    if (sel) { sel = null; redraw(); }
+  }
+  function selectMove(q) {
+    if (!sdrag) return;
+    if (sdrag.type === 'lasso') { sdrag.pts.push(q); redraw(); }
+    else if (sdrag.type === 'move') {
+      const dx = q[0] - sdrag.last[0], dy = q[1] - sdrag.last[1]; sdrag.last = q;
+      sel.items.forEach(s => moveItem(s, dx, dy)); sdrag.moved = true; redraw();
+    } else {
+      const im = singleImg(); if (!im) return;
+      const w = Math.max(24, sdrag.w0 + (q[0] - sdrag.start[0]));
+      im.w = w; im.h = w * sdrag.h0 / sdrag.w0; sdrag.moved = true; redraw();
+    }
+  }
+  function selectUp() {
+    const d = sdrag; sdrag = null;
+    if (!d) return;
+    if (d.type === 'lasso') {
+      const pts = d.pts;
+      let len = 0; for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      if (len < 8) {                      // chỉ bấm: chọn nét/ảnh nằm trên cùng dưới con trỏ
+        const q = pts[0], list = strokes();
+        for (let i = list.length - 1; i >= 0; i--) if (!list[i].e && hits(list[i], q[0], q[1], 6)) { sel = { items: [list[i]] }; break; }
+      } else {
+        const items = pickByLasso(pts);
+        sel = items.length ? { items } : null;
+        if (!items.length) toast('Không có nét nào trong vùng khoanh');
+      }
+    } else if (d.moved) save();
+    redraw();
+  }
+  function deleteSel() {
+    if (!sel) return;
+    const set = new Set(sel.items);
+    state.sheets[state.cur] = strokes().filter(s => !set.has(s));
+    const gs = strokes().filter(g => g.t === 'graph');
+    if (gs.length && !gs.some(g => g.axes)) gs[0].axes = true;
+    sel = null; redraw(); save();
+  }
+  function hoverSelect(q) {
+    const b = selBox(), im = singleImg();
+    if (b && im && Math.hypot(q[0] - b[2], q[1] - b[3]) <= 10) canvas.style.cursor = 'nwse-resize';
+    else if (b && inBox(q, b, 4)) canvas.style.cursor = 'move';
+    else canvas.style.cursor = 'crosshair';
+  }
+
+  /* chèn ảnh: nút 🖼️, dán Ctrl+V, kéo thả */
+  function addImage(src, w0, h0) {
+    const W = body.clientWidth, H = body.clientHeight, k = Math.min(1, W * 0.6 / w0, H * 0.6 / h0);
+    const w = w0 * k, h = h0 * k, it = { t: 'img', src, x: (W - w) / 2, y: (H - h) / 2, w, h };
+    strokes().push(it); state.tool = 'select'; sel = { items: [it] };
+    updateUI(); redraw(); save();
+  }
+  function loadImageFile(file) {
+    if (!file || !/^image\//.test(file.type)) return false;
+    const fr = new FileReader();
+    fr.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const MAX = 700, k = Math.min(1, MAX / Math.max(im.naturalWidth, im.naturalHeight));
+        const cw = Math.max(1, Math.round(im.naturalWidth * k)), ch = Math.max(1, Math.round(im.naturalHeight * k));
+        const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+        cv.getContext('2d').drawImage(im, 0, 0, cw, ch);
+        addImage(cv.toDataURL(/png|gif|webp|svg/.test(file.type) ? 'image/png' : 'image/jpeg', 0.85), cw, ch);
+        toast('🖼️ Đã chèn ảnh — kéo để di chuyển, kéo góc để đổi cỡ');
+      };
+      im.onerror = () => toast('⚠️ Không đọc được ảnh này');
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+    return true;
+  }
+  $('scImgBtn').addEventListener('click', () => $('scImgInput').click());
+  $('scImgInput').addEventListener('change', e => { [...e.target.files].forEach(loadImageFile); e.target.value = ''; });
+  panel.addEventListener('dragover', e => { if ([...(e.dataTransfer?.types || [])].includes('Files')) e.preventDefault(); });
+  panel.addEventListener('drop', e => {
+    const files = [...(e.dataTransfer?.files || [])].filter(f => /^image\//.test(f.type));
+    if (!files.length) return;
+    e.preventDefault(); files.forEach(loadImageFile);
+  });
+  document.addEventListener('paste', e => {
+    if (!state.open) return;
+    const t = e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA' || e.target.isContentEditable) return;
+    const f = [...(e.clipboardData?.files || [])].find(x => /^image\//.test(x.type));
+    if (f) { e.preventDefault(); loadImageFile(f); }
+  });
+  document.addEventListener('keydown', e => {
+    if (!state.open) return;
+    const t = e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || e.target.isContentEditable) return;
+    if ((e.key === 'Delete' || e.key === 'Backspace') && sel && sel.items.length) { e.preventDefault(); deleteSel(); }
+    else if (e.key === 'Escape' && sel) clearSel();
+  });
+
+  let drawing = null, erasing = false;
   const pos = e => {
     const r = canvas.getBoundingClientRect();
     return [e.clientX - r.left, e.clientY - r.top];
   };
-  const isShape = t => t !== 'pen' && t !== 'eraser';
+  /* Tẩy giống tẩy trên PDF: bán kính = cỡ nét × 4, chạm vào nét nào xoá nguyên nét đó */
+  const eraseRadius = () => state.size * 4;
+  function hits(s, x, y, r) {
+    if (s.t === 'img') return x >= s.x - r && x <= s.x + s.w + r && y >= s.y - r && y <= s.y + s.h + r;
+    if (s.t === 'graph') {
+      let fn; try { fn = compile(s.expr); } catch (_) { return false; }
+      const W = canvas.width / (window.devicePixelRatio || 1);
+      for (let px = Math.max(0, x - r); px <= Math.min(W, x + r); px += 1) {
+        let v; try { v = fn((px - s.ox) / s.sc); } catch (_) { continue; }
+        const py = s.oy - v * s.sc;
+        if (isFinite(py) && Math.hypot(px - x, py - y) <= r + s.w / 2) return true;
+      }
+      return false;
+    }
+    if (s.t) {
+      const dpr = window.devicePixelRatio || 1;
+      ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      shapePath(s); ctx.lineWidth = s.w + 2 * r;
+      const ok = ctx.isPointInStroke(x * dpr, y * dpr);
+      ctx.restore();
+      return ok;
+    }
+    for (const q of s.p) if (Math.hypot(q[0] - x, q[1] - y) <= r + s.w / 2) return true;
+    return false;
+  }
+  function eraseAt(x, y) {
+    const r = eraseRadius(), before = strokes().length;
+    state.sheets[state.cur] = strokes().filter(s => s.e || !hits(s, x, y, r));
+    // nếu xoá mất trục toạ độ của đồ thị đầu tiên thì chuyển trục sang đồ thị kế tiếp
+    const gs = strokes().filter(g => g.t === 'graph');
+    if (gs.length && !gs.some(g => g.axes)) gs[0].axes = true;
+    return strokes().length !== before;
+  }
+  function moveEraserCursor(e) {
+    const d = eraseRadius() * 2;
+    eraserCur.style.width = d + 'px'; eraserCur.style.height = d + 'px';
+    eraserCur.style.left = e.clientX + 'px'; eraserCur.style.top = e.clientY + 'px';
+    eraserCur.classList.add('show');
+  }
+  canvas.addEventListener('pointerleave', () => eraserCur.classList.remove('show'));
+  const isShape = t => t !== 'pen' && t !== 'eraser' && t !== 'select';
   function constrain(st, e) {
     // Shift: ép vuông / tròn / góc bội 15°
     if (!e.shiftKey || !st.t) return;
@@ -391,21 +622,32 @@
     e.preventDefault();
     try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
     const tool = state.tool, eraser = tool === 'eraser', p0 = pos(e);
+    if (tool === 'select') { selectDown(p0); return; }
+    if (eraser) { erasing = true; if (eraseAt(p0[0], p0[1])) redraw(); moveEraserCursor(e); return; }
     if (isShape(tool)) {
-      drawing = { t: tool, c: state.color, w: state.size, d: state.dash, p: [p0, p0] };
+      drawing = { t: tool, c: state.color, w: state.size, d: state.dash, p: [p0, p0.slice()] };
     } else {
-      drawing = { c: state.color, w: eraser ? state.size * 4 : state.size, e: eraser, p: [p0] };
+      drawing = { c: state.color, w: state.size, p: [p0] };
     }
     strokes().push(drawing);
     redraw();
   });
   canvas.addEventListener('pointermove', e => {
+    if (state.tool === 'select') { const q = pos(e); if (sdrag) selectMove(q); else hoverSelect(q); return; }
+    if (state.tool === 'eraser') moveEraserCursor(e);
+    if (erasing) { const q = pos(e); if (eraseAt(q[0], q[1])) redraw(); return; }
     if (!drawing) return;
     if (drawing.t) { drawing.p[1] = pos(e); constrain(drawing, e); }
     else drawing.p.push(pos(e));
     redraw(); // vẽ lại cả trang để tẩy (destination-out) luôn đúng thứ tự
   });
   const endDraw = e => {
+    if (sdrag) { selectUp(); try { canvas.releasePointerCapture(e.pointerId); } catch (_) {} return; }
+    if (erasing) {
+      erasing = false;
+      try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+      save(); return;
+    }
     if (!drawing) return;
     // bỏ hình quá nhỏ (chạm nhầm)
     if (drawing.t && Math.hypot(drawing.p[1][0] - drawing.p[0][0], drawing.p[1][1] - drawing.p[0][1]) < 3) {
@@ -425,11 +667,15 @@
     $('scNext').disabled = state.cur === state.sheets.length - 1;
     panel.querySelectorAll('.sc-tool').forEach(b => b.classList.toggle('active', b.dataset.tool === state.tool));
     $('scDash').classList.toggle('active', state.dash);
-    sel.value = SPECIAL.some(([v]) => v === state.tool) ? state.tool : '';
-    sel.classList.toggle('active', !!sel.value);
+    shapeSel.value = SPECIAL.some(([v]) => v === state.tool) ? state.tool : '';
+    shapeSel.classList.toggle('active', !!shapeSel.value);
     panel.querySelectorAll('.sc-swatch').forEach(b => b.classList.toggle('active', b.dataset.color === state.color));
     panel.querySelectorAll('.sc-size').forEach(b => b.classList.toggle('active', +b.dataset.size === state.size));
     panel.classList.toggle('eraser', state.tool === 'eraser');
+    if (state.tool !== 'select' && sel) { sel = null; if (state.open) redraw(); }
+    canvas.style.cursor = state.tool === 'select' ? 'crosshair' : '';
+    if (state.tool !== 'eraser') eraserCur.classList.remove('show');
+    $('scColorInput').value = state.color;
     btn.classList.toggle('active', state.open);
   }
 
@@ -448,8 +694,30 @@
   btn.addEventListener('click', toggle);
   $('scClose').addEventListener('click', () => { setOpen(false); toast('Đã ẩn nháp (vẫn được giữ lại)'); });
 
-  panel.querySelectorAll('.sc-tool').forEach(b => b.addEventListener('click', () => { state.tool = b.dataset.tool; updateUI(); }));
-  sel.addEventListener('change', () => { if (sel.value) { state.tool = sel.value; updateUI(); } });
+  /* ---------- ĐỒNG BỘ với bút/tẩy trên file PDF (PenSync do pdf.js cung cấp) ---------- */
+  const sync = window.PenSync;
+  const pushSync = o => { if (sync) sync.set(o); };
+  if (sync) {
+    const st = sync.get();
+    if (st.color) state.color = st.color;
+    if (SIZES.includes(st.width)) state.size = st.width;
+    if (st.tool === 'pen' || st.tool === 'eraser') state.tool = st.tool;
+    sync.onChange(o => {
+      if (o.color) state.color = o.color;
+      if (SIZES.includes(o.width)) state.size = o.width;
+      if (o.tool === 'pen' || o.tool === 'eraser') state.tool = o.tool;
+      updateUI();
+    });
+  }
+  panel.querySelectorAll('.sc-tool').forEach(b => b.addEventListener('click', () => {
+    state.tool = b.dataset.tool; updateUI();
+    if (state.tool === 'pen' || state.tool === 'eraser') pushSync({ tool: state.tool });
+  }));
+  $('scColorInput').addEventListener('input', e => {
+    state.color = e.target.value; if (state.tool === 'eraser') state.tool = 'pen';
+    updateUI(); pushSync({ color: state.color, tool: state.tool === 'pen' ? 'pen' : undefined }); save();
+  });
+  shapeSel.addEventListener('change', () => { if (shapeSel.value) { state.tool = shapeSel.value; updateUI(); } });
   const graphBar = $('scGraphBar');
   $('scGraphBtn').addEventListener('click', () => {
     graphBar.classList.toggle('show');
@@ -475,13 +743,14 @@
   if (window.ResizeObserver) new ResizeObserver(() => { if (state.open) fitCanvas(); }).observe(body);
   $('scDash').addEventListener('click', () => { state.dash = !state.dash; updateUI(); });
   panel.querySelectorAll('.sc-swatch').forEach(b => b.addEventListener('click', () => {
-    state.color = b.dataset.color; if (state.tool === 'eraser') state.tool = 'pen'; updateUI(); save();
+    state.color = b.dataset.color; if (state.tool === 'eraser') state.tool = 'pen'; updateUI(); pushSync({ color: state.color }); save();
   }));
   panel.querySelectorAll('.sc-size').forEach(b => b.addEventListener('click', () => {
-    state.size = +b.dataset.size; updateUI(); save();
+    state.size = +b.dataset.size; updateUI(); pushSync({ width: state.size }); save();
   }));
 
   function goto(i) {
+    sel = null; sdrag = null;
     state.cur = Math.max(0, Math.min(i, state.sheets.length - 1));
     updateUI(); redraw(); save();
   }
@@ -494,7 +763,7 @@
   });
   $('scClear').addEventListener('click', () => {
     if (!strokes().length) return toast('Trang nháp đang trống');
-    state.sheets[state.cur] = [];
+    state.sheets[state.cur] = []; sel = null;
     redraw(); save();
     toast('🗑️ Đã xoá trang nháp');
   });
