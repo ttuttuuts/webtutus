@@ -386,6 +386,38 @@
   }
 
   /* ---------- CHỌN / DI CHUYỂN / CHÈN ẢNH ---------- */
+  /* ---------- HOÀN TÁC / LÀM LẠI / SAO CHÉP ---------- */
+  const undoStack = [], redoStack = [];
+  const cloneStroke = s => ({ ...s, p: s.p && s.p.map(q => q.slice()) });
+  const snap = () => ({ sheets: state.sheets.map(sh => sh.map(cloneStroke)), cur: state.cur });
+  function pushUndo() { if (window.UndoBus) window.UndoBus.last = 'scratch'; undoStack.push(snap()); if (undoStack.length > 60) undoStack.shift(); redoStack.length = 0; }
+  function restore(sn) {
+    state.sheets = sn.sheets; state.cur = Math.min(sn.cur, state.sheets.length - 1);
+    sel = null; sdrag = null; updateUI(); redraw(); save();
+  }
+  function undo() {
+    if (!undoStack.length) return toast('Không còn gì để hoàn tác');
+    redoStack.push(snap()); restore(undoStack.pop());
+  }
+  function redo() {
+    if (!redoStack.length) return toast('Không còn gì để làm lại');
+    undoStack.push(snap()); restore(redoStack.pop());
+  }
+  if (window.UndoBus) window.UndoBus.scratch = { undo, redo, canUndo: () => undoStack.length > 0, canRedo: () => redoStack.length > 0, isOpen: () => state.open };
+  let clip = null, pasteN = 0;
+  function copySel() {
+    if (!sel || !sel.items.length) return false;
+    clip = sel.items.map(cloneStroke); pasteN = 0; return true;
+  }
+  function pasteClip() {
+    if (!clip) return false;
+    pushUndo(); pasteN++;
+    const hasAxes = strokes().some(g => g.t === 'graph' && g.axes);
+    const items = clip.map(c0 => { const c = cloneStroke(c0); moveItem(c, 18 * pasteN, 18 * pasteN); if (c.t === 'graph' && hasAxes) c.axes = false; return c; });
+    items.forEach(i => strokes().push(i));
+    state.tool = 'select'; sel = { items };
+    updateUI(); redraw(); save(); return true;
+  }
   let sel = null;          // { items: [stroke refs] }
   let sdrag = null;        // { type: 'lasso'|'move'|'resize', ... }
   function recorder() {
@@ -471,10 +503,12 @@
     if (sdrag.type === 'lasso') { sdrag.pts.push(q); redraw(); }
     else if (sdrag.type === 'move') {
       const dx = q[0] - sdrag.last[0], dy = q[1] - sdrag.last[1]; sdrag.last = q;
+      if (!sdrag.moved) pushUndo();
       sel.items.forEach(s => moveItem(s, dx, dy)); sdrag.moved = true; redraw();
     } else {
       const im = singleImg(); if (!im) return;
       const w = Math.max(24, sdrag.w0 + (q[0] - sdrag.start[0]));
+      if (!sdrag.moved) pushUndo();
       im.w = w; im.h = w * sdrag.h0 / sdrag.w0; sdrag.moved = true; redraw();
     }
   }
@@ -497,6 +531,7 @@
   }
   function deleteSel() {
     if (!sel) return;
+    pushUndo();
     const set = new Set(sel.items);
     state.sheets[state.cur] = strokes().filter(s => !set.has(s));
     const gs = strokes().filter(g => g.t === 'graph');
@@ -514,7 +549,7 @@
   function addImage(src, w0, h0) {
     const W = body.clientWidth, H = body.clientHeight, k = Math.min(1, W * 0.6 / w0, H * 0.6 / h0);
     const w = w0 * k, h = h0 * k, it = { t: 'img', src, x: (W - w) / 2, y: (H - h) / 2, w, h };
-    strokes().push(it); state.tool = 'select'; sel = { items: [it] };
+    pushUndo(); strokes().push(it); state.tool = 'select'; sel = { items: [it] };
     updateUI(); redraw(); save();
   }
   function loadImageFile(file) {
@@ -549,15 +584,32 @@
     const t = e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA' || e.target.isContentEditable) return;
     const f = [...(e.clipboardData?.files || [])].find(x => /^image\//.test(x.type));
     if (f) { e.preventDefault(); loadImageFile(f); }
+    else if (clip) { e.preventDefault(); pasteClip(); }     // dán nét/hình/ảnh đã Ctrl+C trong nháp
+  });
+  const typing = el => { const t = el.tagName; return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || el.isContentEditable; };
+  document.addEventListener('copy', e => {
+    if (!state.open || typing(e.target) || String(window.getSelection()).trim()) return;
+    if (copySel()) { e.preventDefault(); toast('📋 Đã sao chép — Ctrl+V để dán'); }
+  });
+  document.addEventListener('cut', e => {
+    if (!state.open || typing(e.target) || String(window.getSelection()).trim()) return;
+    if (copySel()) { e.preventDefault(); deleteSel(); toast('✂️ Đã cắt — Ctrl+V để dán'); }
   });
   document.addEventListener('keydown', e => {
     if (!state.open) return;
     const t = e.target.tagName; if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || e.target.isContentEditable) return;
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      const k = e.key.toLowerCase();
+      if (!window.UndoBus) {      // nếu không có bộ điều phối của pdf.js thì tự xử lý
+        if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); return; }
+        if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); redo(); return; }
+      }
+    }
     if ((e.key === 'Delete' || e.key === 'Backspace') && sel && sel.items.length) { e.preventDefault(); deleteSel(); }
     else if (e.key === 'Escape' && sel) clearSel();
   });
 
-  let drawing = null, erasing = false;
+  let drawing = null, erasing = false, eraseUndone = false;
   const pos = e => {
     const r = canvas.getBoundingClientRect();
     return [e.clientX - r.left, e.clientY - r.top];
@@ -589,7 +641,9 @@
   }
   function eraseAt(x, y) {
     const r = eraseRadius(), before = strokes().length;
-    state.sheets[state.cur] = strokes().filter(s => s.e || !hits(s, x, y, r));
+    const kept = strokes().filter(s => s.e || !hits(s, x, y, r));
+    if (kept.length !== before && !eraseUndone) { pushUndo(); eraseUndone = true; }
+    state.sheets[state.cur] = kept;
     // nếu xoá mất trục toạ độ của đồ thị đầu tiên thì chuyển trục sang đồ thị kế tiếp
     const gs = strokes().filter(g => g.t === 'graph');
     if (gs.length && !gs.some(g => g.axes)) gs[0].axes = true;
@@ -623,7 +677,8 @@
     try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
     const tool = state.tool, eraser = tool === 'eraser', p0 = pos(e);
     if (tool === 'select') { selectDown(p0); return; }
-    if (eraser) { erasing = true; if (eraseAt(p0[0], p0[1])) redraw(); moveEraserCursor(e); return; }
+    if (eraser) { erasing = true; eraseUndone = false; if (eraseAt(p0[0], p0[1])) redraw(); moveEraserCursor(e); return; }
+    pushUndo();
     if (isShape(tool)) {
       drawing = { t: tool, c: state.color, w: state.size, d: state.dash, p: [p0, p0.slice()] };
     } else {
@@ -651,7 +706,7 @@
     if (!drawing) return;
     // bỏ hình quá nhỏ (chạm nhầm)
     if (drawing.t && Math.hypot(drawing.p[1][0] - drawing.p[0][0], drawing.p[1][1] - drawing.p[0][1]) < 3) {
-      const a = strokes(); a.splice(a.indexOf(drawing), 1); redraw();
+      const a = strokes(); a.splice(a.indexOf(drawing), 1); undoStack.pop(); redraw();
     }
     drawing = null;
     try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
@@ -733,6 +788,7 @@
     const xr = Math.max(1, Math.min(1000, parseFloat($('scRange').value) || 6));
     const base = first ? { ox: first.ox, oy: first.oy, sc: first.sc, axes: false }
                        : { ox: W / 2, oy: H / 2, sc: W / (2 * xr), axes: true };
+    pushUndo();
     list.push({ t: 'graph', expr: src, c: GRAPH_COLORS[graphs.length % GRAPH_COLORS.length], w: Math.max(2, state.size),
                 lab: 16 + 15 * graphs.length, p: [[0, 0], [0, 0]], ...base });
     redraw(); save();
@@ -757,13 +813,13 @@
   $('scPrev').addEventListener('click', () => goto(state.cur - 1));
   $('scNext').addEventListener('click', () => goto(state.cur + 1));
   $('scAdd').addEventListener('click', () => {
-    state.sheets.push([]);
+    pushUndo(); state.sheets.push([]);
     goto(state.sheets.length - 1);
     toast('📄 Đã tạo trang nháp trống');
   });
   $('scClear').addEventListener('click', () => {
     if (!strokes().length) return toast('Trang nháp đang trống');
-    state.sheets[state.cur] = []; sel = null;
+    pushUndo(); state.sheets[state.cur] = []; sel = null;
     redraw(); save();
     toast('🗑️ Đã xoá trang nháp');
   });
@@ -815,6 +871,9 @@
     if (!document.body.classList.contains('on-reader')) return;
     if (e.key === 'n' || e.key === 'N') { e.preventDefault(); toggle(); }
   });
+
+  /* chặn menu chuột phải của trình duyệt trên toàn bộ web (kể cả ô nhập chữ, iframe không thuộc phạm vi) */
+  document.addEventListener('contextmenu', e => e.preventDefault(), true);
 
   updateUI();
   window.ScratchPad = { open: () => setOpen(true), close: () => setOpen(false), toggle };

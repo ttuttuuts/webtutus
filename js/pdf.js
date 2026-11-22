@@ -18,6 +18,17 @@
   const RENDER_ROOT_MARGIN = 800;
   const B_DOUBLE_MS = 280;
   let bPressCount = 0, bPressTimer = null;
+  const pdfUndo = [], pdfRedo = [];
+  let eraseUndone = false;
+  window.UndoBus = window.UndoBus || { last: null, scratch: null };
+  function pushPdfUndo(prev) { pdfUndo.push(prev || allStrokes.slice()); if (pdfUndo.length > 100) pdfUndo.shift(); pdfRedo.length = 0; window.UndoBus.last = 'pdf'; }
+  function restorePdfStrokes(arr) {
+    allStrokes = arr;
+    document.querySelectorAll('.draw-canvas').forEach(c => redrawStrokes(c, parseInt(c.dataset.pageIdx, 10)));
+    scheduleSaveStrokes();
+  }
+  function pdfUndoStep() { if (!pdfUndo.length) return false; pdfRedo.push(allStrokes.slice()); restorePdfStrokes(pdfUndo.pop()); toast('↶ Đã hoàn tác nét vẽ trên PDF'); return true; }
+  function pdfRedoStep() { if (!pdfRedo.length) return false; pdfUndo.push(allStrokes.slice()); restorePdfStrokes(pdfRedo.pop()); toast('↷ Đã làm lại nét vẽ trên PDF'); return true; }
   const penListeners = []; let penSyncing = false;
   function notifyPen() { if (penSyncing) return; const st = { tool: activeTool, color: penColor, width: penWidth }; penListeners.forEach(fn => { try { fn(st); } catch (_) {} }); }
 
@@ -234,7 +245,7 @@
       currentName = item.name.replace(/\.pdf$/i, '');
       localStorage.setItem('pdfReader_lastFileId', id);
       currentScale = 1; userMovedPopup = false;
-      allStrokes = (item.strokes || []).map(s => ({ pageIdx: s.pageIdx, color: s.color, width: s.width, points: s.points.map(p => ({ x: p.x, y: p.y })) }));
+      allStrokes = (item.strokes || []).map(s => ({ pageIdx: s.pageIdx, color: s.color, width: s.width, points: s.points.map(p => ({ x: p.x, y: p.y })) })); pdfUndo.length = 0; pdfRedo.length = 0;
       activeTool = null;
       fileNameEl.textContent = item.name;
       pageBadge.textContent = '…';
@@ -338,7 +349,7 @@
     }
   }
   function eraseAt(canvas, pageIdx, px, py, radiusPx) {
-    const before = allStrokes.length, r2 = radiusPx * radiusPx;
+    const before = allStrokes.length, r2 = radiusPx * radiusPx, prevStrokes = allStrokes;
     allStrokes = allStrokes.filter(s => {
       if (s.pageIdx !== pageIdx) return true;
       for (const p of s.points) {
@@ -349,6 +360,7 @@
       return true;
     });
     const changed = before !== allStrokes.length;
+    if (changed && !eraseUndone) { pushPdfUndo(prevStrokes); eraseUndone = true; }
     if (changed) redrawStrokes(canvas, pageIdx);
     return changed;
   }
@@ -379,10 +391,11 @@
       drawing = true;
       const { px, py, nx, ny } = getCanvasPos(e);
       if (activeTool === 'pen') {
+        pushPdfUndo();
         currentStroke = { pageIdx, color: penColor, width: penWidth, points: [{ x: nx, y: ny }] };
         allStrokes.push(currentStroke);
         redrawStrokes(canvas, pageIdx);
-      } else if (activeTool === 'eraser') eraseAt(canvas, pageIdx, px, py, getEraserRadiusCanvas());
+      } else if (activeTool === 'eraser') { eraseUndone = false; eraseAt(canvas, pageIdx, px, py, getEraserRadiusCanvas()); }
     });
     canvas.addEventListener('pointermove', e => {
       if (activeTool === 'eraser') { pointerX = e.clientX; pointerY = e.clientY; pointerInViewer = true; scheduleEraserCursorUpdate(); }
@@ -471,6 +484,7 @@
   penClear.addEventListener('click', async () => {
     if (allStrokes.length === 0) return toast('Chưa có nét vẽ nào');
     if (!confirm('Xoá tất cả nét vẽ?')) return;
+    pushPdfUndo();
     allStrokes = [];
     document.querySelectorAll('.draw-canvas').forEach(c => redrawStrokes(c, parseInt(c.dataset.pageIdx, 10)));
     scheduleSaveStrokes();
@@ -524,6 +538,29 @@
       if (activeTool) { activeTool = null; updateToolUI(); }
       if (selectMode) { selectMode = false; updateSelectModeUI(); }
     }
+  });
+
+  /* Ctrl+Z / Ctrl+Y: hoàn tác / làm lại ở nơi vừa vẽ gần nhất (PDF hoặc bảng Nháp) */
+  document.addEventListener('keydown', e => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const t = e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT' || e.target.isContentEditable) return;
+    if (!document.body.classList.contains('on-reader')) return;
+    const k = e.key.toLowerCase();
+    const undo = k === 'z' && !e.shiftKey, redo = k === 'y' || (k === 'z' && e.shiftKey);
+    if (!undo && !redo) return;
+    e.preventDefault();
+    const bus = window.UndoBus, sc = bus.scratch && bus.scratch.isOpen() ? bus.scratch : null;
+    const pdfOk = undo ? pdfUndo.length > 0 : pdfRedo.length > 0;
+    const scOk = sc ? (undo ? sc.canUndo() : sc.canRedo()) : false;
+    let target = null;
+    if (bus.last === 'scratch' && scOk) target = 'scratch';
+    else if (bus.last === 'pdf' && pdfOk) target = 'pdf';
+    else if (scOk) target = 'scratch';
+    else if (pdfOk) target = 'pdf';
+    if (target === 'scratch') { undo ? sc.undo() : sc.redo(); bus.last = 'scratch'; }
+    else if (target === 'pdf') { undo ? pdfUndoStep() : pdfRedoStep(); bus.last = 'pdf'; }
+    else toast(undo ? 'Không còn gì để hoàn tác' : 'Không còn gì để làm lại');
   });
 
   function updateMarqueeBox() {
@@ -920,7 +957,7 @@
     if (oldRightId) localStorage.setItem('pdfReader_lastFileId', oldRightId);
     let rightStrokes = [];
     if (oldRightId) { try { const item = await dbGet(oldRightId); if (item && item.strokes) rightStrokes = item.strokes; } catch (_) {} }
-    allStrokes = rightStrokes.map(s => ({ pageIdx: s.pageIdx, color: s.color, width: s.width, points: s.points.map(p => ({ x: p.x, y: p.y })) }));
+    allStrokes = rightStrokes.map(s => ({ pageIdx: s.pageIdx, color: s.color, width: s.width, points: s.points.map(p => ({ x: p.x, y: p.y })) })); pdfUndo.length = 0; pdfRedo.length = 0;
     fileNameEl.textContent = oldRightFile.name;
     try { const buffer = await oldRightFile.arrayBuffer(); pdfDoc = await pdfjsLib.getDocument({ data: buffer }).promise; pageBadge.textContent = pdfDoc.numPages + ' trang'; await renderAllPages(); updateToolUI(); updateSelectModeUI(); } catch (_) { return toast('❌ Lỗi đổi file'); }
     if (viewerContainer.classList.contains('split')) {
@@ -978,7 +1015,7 @@
       currentScale = 1; userMovedPopup = false; activeTool = null;
       pendingRestoreScroll = 0;
       zoomLabel.textContent = '100%';
-      allStrokes = (item.strokes || []).map(s => ({ pageIdx: s.pageIdx, color: s.color, width: s.width, points: s.points.map(p => ({ x: p.x, y: p.y })) }));
+      allStrokes = (item.strokes || []).map(s => ({ pageIdx: s.pageIdx, color: s.color, width: s.width, points: s.points.map(p => ({ x: p.x, y: p.y })) })); pdfUndo.length = 0; pdfRedo.length = 0;
       fileNameEl.textContent = file.name;
       pageBadge.textContent = '…';
       toolbar.classList.add('show'); zoomGroup.classList.add('show'); colorPicker.classList.add('show'); penGroup.classList.add('show');
